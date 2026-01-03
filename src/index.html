@@ -1,32 +1,2796 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="styles.css" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>PakePlus App</title>
-        <script type="module" src="/main.js" defer></script>
-    </head>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英语单词学习应用 v2.1.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                        light: '#F9FAFB'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'custom': '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+                        'custom-hover': '0 20px 35px -10px rgba(0, 0, 0, 0.1)',
+                    }
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-blue {
+                background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            }
+            .bg-gradient-green {
+                background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            }
+            .bg-gradient-orange {
+                background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            }
+            .card-hover {
+                transition: all 0.3s ease;
+            }
+            .card-hover:hover {
+                transform: translateY(-5px);
+            }
+            .btn-hover {
+                transition: all 0.2s ease;
+            }
+            .btn-hover:hover {
+                transform: scale(1.03);
+            }
+            .progress-bar {
+                transition: width 0.5s ease;
+            }
+            .underline-link {
+                text-decoration: underline;
+                color: #6B7280;
+                cursor: pointer;
+            }
+            .underline-link:hover {
+                color: #3B82F6;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- 更新说明模态框 -->
+    <div id="updateModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 p-6 transform transition-all">
+            <div class="text-center mb-4">
+                <div class="inline-block bg-primary p-4 rounded-full mb-2">
+                    <i class="fa fa-info-circle text-3xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-dark">版本更新说明 v2.1.0</h3>
+            </div>
+            <div class="text-gray-600 mb-6 max-h-96 overflow-y-auto pr-2">
+                <ul class="list-disc pl-5 space-y-2">
+                    <li>更新系统版本至 v2.1.0</li>
+                    <li>优化兑换码系统，新增支持月、季度和年度会员兑换码</li>
+                    <li>实现兑换码加密存储，提高安全性</li>
+                    <li>更新兑换码数据库，提供更多有效兑换码</li>
+                    <li>单词导入新增支持Excel格式</li>
+                    <li>单词管理新增修改功能</li>
+                    <li>学习时对空格和点号的容错处理优化</li>
+                    <li>支持单词多种正确拼写方式</li>
+                    <li>新增错误评判反馈功能</li>
+                    <li>错误提示更详细，显示具体错误位置</li>
+                    <li>修复仪表盘中学习进度和单词掌握模块显示问题</li>
+                    <li>增加错题本导出功能</li>
+                    <li>单词导出支持选择txt或Excel格式</li>
+                    <li>完成一轮单词复习后可选择继续复习仍错误的单词</li>
+                    <li>学习页面新增重新开始按钮</li>
+                    <li>其他细节优化和bug修复</li>
+                </ul>
+            </div>
+            <div class="flex justify-center">
+                <button id="closeUpdateModal" class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-6 rounded-full btn-hover">
+                    我知道了
+                </button>
+            </div>
+        </div>
+    </div>
 
-    <body>
-        <main class="container">
-            <h1>Welcome to PakePlus</h1>
-            <form class="row" id="greet-form">
-                <input id="inputValue" placeholder="Enter a something..." />
-            </form>
-            <div class="resultBox">
-                <span>result: </span>
-                <span id="result"></span>
+    <!-- 反馈模态框 -->
+    <div id="feedbackModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 transform transition-all">
+            <div class="text-center mb-4">
+                <h3 class="text-xl font-bold text-dark">反馈错误评判</h3>
             </div>
-            <div class="invokeBox">
-                <button id="openUrl">open_url_browser</button>
-                <button id="openUrlNew">open_url_new</button>
-                <button id="runCommand">run_command</button>
-                <button id="downloadFile">download_file</button>
-                <button id="getExeDir">get_exe_dir</button>
-                <button id="getEnvVar">get_env_var</button>
-                <button id="findPort">find_port</button>
+            <div class="text-gray-600 mb-4">
+                <p class="mb-3">请选择错误原因：</p>
+                <div class="space-y-2">
+                    <div class="flex items-center">
+                        <input type="radio" id="reason1" name="feedbackReason" value="评判错误" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" checked>
+                        <label for="reason1" class="ml-2 block text-sm text-gray-700">评判错误</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="reason2" name="feedbackReason" value="手误" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <label for="reason2" class="ml-2 block text-sm text-gray-700">手误</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="reason3" name="feedbackReason" value="其他" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <label for="reason3" class="ml-2 block text-sm text-gray-700">其他</label>
+                    </div>
+                    <div id="otherReasonContainer" class="mt-2 hidden">
+                        <label for="otherReason" class="block text-sm font-medium text-gray-700 mb-1">请说明：</label>
+                        <textarea id="otherReason" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary" rows="2"></textarea>
+                    </div>
+                </div>
             </div>
-        </main>
-    </body>
+            <div class="flex justify-center space-x-4">
+                <button id="cancelFeedback" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded-full btn-hover">
+                    取消
+                </button>
+                <button id="submitFeedback" class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-6 rounded-full btn-hover">
+                    提交反馈
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 会员支付模态框 -->
+    <div id="membershipModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 transform transition-all relative">
+            <div class="text-center mb-4">
+                <div class="inline-block bg-accent p-4 rounded-full mb-2">
+                    <i class="fa fa-star text-3xl text-white"></i>
+                </div>
+                <h3 class="text-xl font-bold text-dark">试用已结束</h3>
+            </div>
+            <div class="text-gray-600 mb-6">
+                <p class="mb-3">您已使用本应用30分钟，如需继续使用，请开通会员。</p>
+                <p class="mb-2"><strong>订单编号：</strong><span id="orderNumber"></span></p>
+                <p class="mb-4">请添加微信 <strong>wxid_do5lg6q0fwp312</strong> 进行开通</p>
+                <div class="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                    <p class="text-sm text-yellow-800"><i class="fa fa-info-circle mr-1"></i> 开通会员后可享受全部功能，无使用时间限制</p>
+                </div>
+            </div>
+            <div class="flex justify-center mb-4">
+                <button id="buyMembershipDirect" class="bg-gradient-to-r from-accent to-yellow-500 hover:from-yellow-500 hover:to-accent text-white font-bold py-3 px-8 rounded-full shadow-lg btn-hover transform transition-all">
+                    <i class="fa fa-shopping-cart mr-2"></i>购买会员
+                </button>
+            </div>
+            <div class="flex justify-center mb-4">
+                <button id="alreadyPurchased" class="bg-secondary hover:bg-secondary/90 text-white font-bold py-2 px-6 rounded-full btn-hover">
+                    我已购买
+                </button>
+            </div>
+            <div id="membershipTypeContainer" class="hidden mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-3">请选择会员类型：</label>
+                <div class="flex justify-center space-x-3">
+                    <button class="membership-type-btn bg-primary hover:bg-primary/90 text-white font-bold py-2 px-4 rounded-lg btn-hover active" data-type="monthly">
+                        月会员
+                    </button>
+                    <button class="membership-type-btn bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg btn-hover" data-type="quarterly">
+                        季会员
+                    </button>
+                    <button class="membership-type-btn bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg btn-hover" data-type="annual">
+                        年会员
+                    </button>
+                </div>
+            </div>
+            <div id="modalRedeemCodeContainer" class="hidden">
+                <label for="modalRedeemCode" class="block text-sm font-medium text-gray-700 mb-1">请输入兑换码：</label>
+                <input type="text" id="modalRedeemCode" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary mb-3">
+                <div class="flex justify-center">
+                    <button id="modalVerifyCode" class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-6 rounded-full btn-hover">
+                        验证兑换码
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-md fixed w-full z-40 transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-book text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-dark">单词学习助手</h1>
+            </div>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#dashboard" class="text-gray-600 hover:text-primary transition-colors">仪表盘</a>
+                <a href="#learn" class="text-gray-600 hover:text-primary transition-colors">开始学习</a>
+                <a href="#review" class="text-gray-600 hover:text-primary transition-colors">错题复习</a>
+                <a href="#settings" class="text-gray-600 hover:text-primary transition-colors">设置</a>
+                <!-- 会员中心 -->
+                <div class="relative">
+                    <button id="membershipCenterBtn" class="text-gray-600 hover:text-primary transition-colors focus:outline-none flex items-center space-x-1">
+                        <span>会员中心</span>
+                        <i class="fa fa-caret-down text-xs"></i>
+                    </button>
+                    <!-- 下拉菜单 -->
+                    <div id="membershipDropdown" class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg z-50 hidden">
+                        <a href="#redeemCode" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors" id="redeemCodeLink">
+                            <i class="fa fa-qrcode mr-2"></i>核销兑换码（购买或续费）
+                        </a>
+                        <a href="https://dancibaovip.netlify.app/" target="_blank" rel="noopener noreferrer" class="block px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors" id="buyMembershipLink">
+                            <i class="fa fa-shopping-cart mr-2"></i>购买会员
+                        </a>
+                    </div>
+                </div>
+            </nav>
+            <button class="md:hidden text-gray-600" id="menuToggle">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+        <!-- 移动端菜单 -->
+        <div class="md:hidden hidden bg-white w-full border-t" id="mobileMenu">
+            <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
+                <a href="#dashboard" class="text-gray-600 hover:text-primary py-2 transition-colors">仪表盘</a>
+                <a href="#learn" class="text-gray-600 hover:text-primary py-2 transition-colors">开始学习</a>
+                <a href="#review" class="text-gray-600 hover:text-primary py-2 transition-colors">错题复习</a>
+                <a href="#settings" class="text-gray-600 hover:text-primary py-2 transition-colors">设置</a>
+                <!-- 会员中心相关选项 -->
+                <div class="border-t border-gray-100 pt-2 mt-2">
+                    <div class="text-gray-500 text-sm font-medium mb-2 px-1">会员中心</div>
+                    <a href="#redeemCode" class="text-gray-600 hover:text-primary py-2 transition-colors flex items-center space-x-2">
+                        <i class="fa fa-qrcode"></i>
+                        <span>核销兑换码（购买或续费）</span>
+                    </a>
+                    <a href="https://dancibaovip.netlify.app/" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-primary py-2 transition-colors flex items-center space-x-2">
+                        <i class="fa fa-shopping-cart"></i>
+                        <span>购买会员</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow pt-16">
+        <!-- 欢迎页面 -->
+        <section id="welcome" class="container mx-auto px-4 py-12 text-center">
+            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-custom p-8 card-hover">
+                <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-dark mb-4">欢迎使用单词学习助手</h2>
+                <p class="text-gray-600 mb-8 text-lg">提高你的英语词汇量，轻松掌握新单词！</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+                    <div class="bg-gradient-blue text-white p-4 rounded-xl w-full sm:w-64">
+                        <i class="fa fa-graduation-cap text-3xl mb-2"></i>
+                        <h3 class="font-bold text-lg">学习单词</h3>
+                        <p class="text-sm opacity-90">通过互动练习记忆单词</p>
+                    </div>
+                    <div class="bg-gradient-green text-white p-4 rounded-xl w-full sm:w-64">
+                        <i class="fa fa-line-chart text-3xl mb-2"></i>
+                        <h3 class="font-bold text-lg">跟踪进度</h3>
+                        <p class="text-sm opacity-90">查看你的学习统计数据</p>
+                    </div>
+                    <div class="bg-gradient-orange text-white p-4 rounded-xl w-full sm:w-64">
+                        <i class="fa fa-refresh text-3xl mb-2"></i>
+                        <h3 class="font-bold text-lg">复习错题</h3>
+                        <p class="text-sm opacity-90">强化记忆薄弱单词</p>
+                    </div>
+                </div>
+                <button id="startBtn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-lg btn-hover">
+                    开始学习 <i class="fa fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- 核销兑换码页面 -->
+        <section id="redeemCode" class="container mx-auto px-4 py-12 hidden">
+            <h2 class="text-2xl font-bold text-dark mb-8 text-center">核销兑换码</h2>
+            
+            <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-custom p-8 card-hover mb-8">
+                <!-- 会员详情信息 -->
+                <div class="mb-8 bg-blue-50 p-6 rounded-xl">
+                    <h3 class="text-xl font-bold text-dark mb-4">会员详情</h3>
+                    
+                    <!-- 会员权益 -->
+                    <div class="mb-4">
+                        <h4 class="font-bold text-gray-700 mb-2">会员权益</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                            <li>无限制使用所有功能</li>
+                            <li>单词学习无时间限制</li>
+                            <li>优先体验新功能</li>
+                            <li>专属客服支持</li>
+                            <li>导出数据无限制</li>
+                            <li>无广告干扰</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 有效期说明 -->
+                    <div class="mb-4">
+                        <h4 class="font-bold text-gray-700 mb-2">有效期说明</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                            <li>月会员：有效期30天</li>
+                            <li>季会员：有效期90天</li>
+                            <li>年会员：有效期365天</li>
+                            <li>会员有效期从激活之日起计算</li>
+                            <li>续费后有效期叠加</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 相关条款 -->
+                    <div>
+                        <h4 class="font-bold text-gray-700 mb-2">相关条款</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                            <li>兑换码仅可使用一次，不可重复使用</li>
+                            <li>兑换码有效期以购买时为准</li>
+                            <li>会员到期后将恢复为试用版本</li>
+                            <li>请妥善保管您的兑换码，遗失不补</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- 会员类型选择 -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-3">请选择会员类型：</label>
+                    <div class="flex justify-center space-x-3">
+                        <button class="membership-type-btn bg-primary hover:bg-primary/90 text-white font-bold py-2 px-4 rounded-lg btn-hover active" data-type="monthly">
+                            月会员
+                        </button>
+                        <button class="membership-type-btn bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg btn-hover" data-type="quarterly">
+                            季会员
+                        </button>
+                        <button class="membership-type-btn bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg btn-hover" data-type="annual">
+                            年会员
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 兑换码输入 -->
+                <div>
+                    <label for="redeemCodeInput" class="block text-sm font-medium text-gray-700 mb-1">请输入兑换码：</label>
+                    <input type="text" id="redeemCodeInput" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary mb-4">
+                    <div class="flex justify-center">
+                        <button id="verifyCode" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-lg btn-hover">
+                            验证兑换码
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 仪表盘 -->
+        <section id="dashboard" class="container mx-auto px-4 py-12 hidden">
+            <h2 class="text-2xl font-bold text-dark mb-8 text-center">学习仪表盘</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-custom p-6 card-hover">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500">已学习单词</p>
+                            <h3 class="text-3xl font-bold text-dark" id="learnedCount">0</h3>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fa fa-check-circle text-primary text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-primary h-2 rounded-full progress-bar" id="learnedProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-custom p-6 card-hover">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500">正确率</p>
+                            <h3 class="text-3xl font-bold text-dark" id="correctRate">0%</h3>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <i class="fa fa-percent text-secondary text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-secondary h-2 rounded-full progress-bar" id="correctProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-custom p-6 card-hover">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500">今日学习</p>
+                            <h3 class="text-3xl font-bold text-dark" id="todayCount">0</h3>
+                        </div>
+                        <div class="bg-orange-100 p-3 rounded-full">
+                            <i class="fa fa-calendar-check-o text-accent text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-accent h-2 rounded-full progress-bar" id="todayProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-custom p-6 card-hover">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-gray-500">错题数量</p>
+                            <h3 class="text-3xl font-bold text-dark" id="wrongCount">0</h3>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-full">
+                            <i class="fa fa-times-circle text-danger text-xl"></i>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-danger h-2 rounded-full progress-bar" id="wrongProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-custom p-6 card-hover">
+                    <h3 class="text-xl font-bold text-dark mb-4">学习进度</h3>
+                    <div class="h-80">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-custom p-6 card-hover">
+                    <h3 class="text-xl font-bold text-dark mb-4">单词掌握情况</h3>
+                    <div class="h-80">
+                        <canvas id="masteryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 bg-white rounded-xl shadow-custom p-6 card-hover">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-dark">最近学习记录</h3>
+                    <button id="exportBtn" class="bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-lg btn-hover">
+                        <i class="fa fa-download mr-2"></i>导出Excel
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">单词</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">中文</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">结果</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">日期</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200" id="historyTable">
+                            <!-- 历史记录将通过JS动态添加 -->
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-gray-500">暂无学习记录</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 学习页面 -->
+        <section id="learn" class="container mx-auto px-4 py-12 hidden">
+            <div class="max-w-2xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-dark">单词学习</h2>
+                    <div class="bg-white p-3 rounded-lg shadow-sm">
+                        <span class="text-gray-500">进度: </span>
+                        <span class="font-bold text-primary" id="learnProgress">0/0</span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-custom p-8 mb-6 card-hover">
+                    <div id="wordCard">
+                        <h3 class="text-4xl font-bold text-center text-gray-800 mb-6" id="currentWord">单词将在这里显示</h3>
+                        <div class="mb-8">
+                            <input type="text" id="answerInput" class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-primary transition-colors text-lg" placeholder="请输入对应的英文单词">
+                        </div>
+                        <div class="flex justify-center space-x-4">
+                            <button id="checkBtn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-lg btn-hover">
+                                检查答案
+                            </button>
+                            <button id="restartLearnBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-3 px-6 rounded-full btn-hover">
+                                重新开始
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="resultCard" class="hidden">
+                        <div class="text-center mb-6">
+                            <div id="correctResult" class="hidden">
+                                <div class="inline-block bg-green-100 p-4 rounded-full mb-2">
+                                    <i class="fa fa-check-circle text-4xl text-secondary"></i>
+                                </div>
+                                <h3 class="text-3xl font-bold text-secondary mb-2">对了，你真棒(•̤̀ᵕ•̤́๑)و✧</h3>
+                                <p class="text-gray-600">正确答案: <span id="correctWord" class="font-bold"></span></p>
+                            </div>
+                            <div id="wrongResult" class="hidden">
+                                <div class="inline-block bg-red-100 p-4 rounded-full mb-2">
+                                    <i class="fa fa-times-circle text-4xl text-danger"></i>
+                                </div>
+                                <h3 class="text-3xl font-bold text-danger mb-2">答错了，菜就多练</h3>
+                                <p class="text-gray-600 mb-2">正确答案: <span id="wrongWord" class="font-bold"></span></p>
+                                <p class="text-gray-600 mb-3">错误原因: <span id="errorReason" class="font-bold text-danger"></span></p>
+                                <p class="underline-link" id="disagreeBtn">我不认同这个评判</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <button id="nextBtn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-lg btn-hover">
+                                好的，继续 <i class="fa fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <button id="backToDashboard" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded-full btn-hover">
+                        <i class="fa fa-arrow-left mr-2"></i>返回仪表盘
+                    </button>
+                    <button id="showHint" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded-full btn-hover">
+                        <i class="fa fa-lightbulb-o mr-2"></i>提示
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 错题复习页面 -->
+        <section id="review" class="container mx-auto px-4 py-12 hidden">
+            <div class="max-w-2xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-dark">错题复习</h2>
+                    <div class="flex items-center space-x-4">
+                        <div class="bg-white p-3 rounded-lg shadow-sm">
+                            <span class="text-gray-500">进度: </span>
+                            <span class="font-bold text-primary" id="reviewProgress">0/0</span>
+                        </div>
+                        <button id="exportWrongWordsBtn" class="bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-lg btn-hover">
+                            <i class="fa fa-download mr-2"></i>导出错题
+                        </button>
+                    </div>
+                </div>
+
+                <div id="reviewContent" class="bg-white rounded-2xl shadow-custom p-8 mb-6 card-hover">
+                    <div id="reviewCard">
+                        <h3 class="text-4xl font-bold text-center text-gray-800 mb-6" id="currentReviewWord">单词将在这里显示</h3>
+                        <div class="mb-8">
+                            <input type="text" id="reviewAnswerInput" class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-primary transition-colors text-lg" placeholder="请输入对应的英文单词">
+                        </div>
+                        <div class="flex justify-center">
+                            <button id="reviewCheckBtn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-lg btn-hover">
+                                检查答案
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="reviewResultCard" class="hidden">
+                        <div class="text-center mb-6">
+                            <div id="reviewCorrectResult" class="hidden">
+                                <div class="inline-block bg-green-100 p-4 rounded-full mb-2">
+                                    <i class="fa fa-check-circle text-4xl text-secondary"></i>
+                                </div>
+                                <h3 class="text-3xl font-bold text-secondary mb-2">对了，你真棒(•̤̀ᵕ•̤́๑)و✧</h3>
+                                <p class="text-gray-600">正确答案: <span id="reviewCorrectWord" class="font-bold"></span></p>
+                            </div>
+                            <div id="reviewWrongResult" class="hidden">
+                                <div class="inline-block bg-red-100 p-4 rounded-full mb-2">
+                                    <i class="fa fa-times-circle text-4xl text-danger"></i>
+                                </div>
+                                <h3 class="text-3xl font-bold text-danger mb-2">答错了，再试一次</h3>
+                                <p class="text-gray-600 mb-2">正确答案: <span id="reviewWrongWord" class="font-bold"></span></p>
+                                <p class="text-gray-600 mb-3">错误原因: <span id="reviewErrorReason" class="font-bold text-danger"></span></p>
+                                <p class="underline-link" id="reviewDisagreeBtn">我不认同这个评判</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <button id="reviewNextBtn" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-lg btn-hover">
+                                好的，继续 <i class="fa fa-arrow-right ml-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 复习完成提示 -->
+                <div id="reviewComplete" class="bg-white rounded-2xl shadow-custom p-8 mb-6 card-hover hidden text-center">
+                    <div class="inline-block bg-green-100 p-4 rounded-full mb-4">
+                        <i class="fa fa-trophy text-4xl text-secondary"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-dark mb-2">复习完成！</h3>
+                    <p class="text-gray-600 mb-6" id="reviewCompleteMessage">你已经完成了所有错题的复习</p>
+                    <div id="reviewAgainSection" class="hidden mb-6">
+                        <p class="text-gray-600 mb-4">还有一些单词仍然错误，是否继续复习？</p>
+                        <div class="flex justify-center space-x-4">
+                            <button id="reviewAgainBtn" class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-6 rounded-full btn-hover">
+                                继续复习
+                            </button>
+                            <button id="finishReviewBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded-full btn-hover">
+                                结束复习
+                            </button>
+                        </div>
+                    </div>
+                    <button id="backAfterReviewBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded-full btn-hover">
+                        返回仪表盘
+                    </button>
+                </div>
+
+                <div class="flex justify-between">
+                    <button id="backFromReview" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded-full btn-hover">
+                        <i class="fa fa-arrow-left mr-2"></i>返回仪表盘
+                    </button>
+                    <button id="reviewHint" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded-full btn-hover">
+                        <i class="fa fa-lightbulb-o mr-2"></i>提示
+                    </button>
+                </div>
+
+                <div class="mt-8 bg-white rounded-xl shadow-custom p-6 card-hover">
+                    <h3 class="text-xl font-bold text-dark mb-4">我的错题本</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="wrongWordsList">
+                        <!-- 错题将通过JS动态添加 -->
+                        <div class="col-span-full text-center text-gray-500">暂无错题</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 修改单词模态框 -->
+        <div id="editWordModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 transform transition-all">
+                <div class="text-center mb-4">
+                    <h3 class="text-xl font-bold text-dark">修改单词</h3>
+                </div>
+                <div class="text-gray-600 mb-6">
+                    <input type="hidden" id="editWordIndex">
+                    <div class="mb-4">
+                        <label for="editEnglish" class="block text-sm font-medium text-gray-700 mb-1">英文单词 (多个拼写用逗号分隔)</label>
+                        <input type="text" id="editEnglish" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label for="editChinese" class="block text-sm font-medium text-gray-700 mb-1">中文翻译</label>
+                        <input type="text" id="editChinese" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary">
+                    </div>
+                </div>
+                <div class="flex justify-center space-x-4">
+                    <button id="cancelEditWord" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-6 rounded-full btn-hover">
+                        取消
+                    </button>
+                    <button id="saveEditWord" class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-6 rounded-full btn-hover">
+                        保存
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设置页面 -->
+        <section id="settings" class="container mx-auto px-4 py-12 hidden">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-2xl font-bold text-dark mb-8 text-center">设置</h2>
+
+                <div class="bg-white rounded-2xl shadow-custom p-8 mb-8 card-hover">
+                    <h3 class="text-xl font-bold text-dark mb-6">单词管理</h3>
+
+                    <div class="mb-6">
+                        <h4 class="font-bold text-gray-700 mb-3">添加新单词</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="newWord" class="block text-sm font-medium text-gray-700 mb-1">英文单词 (多个拼写用逗号分隔)</label>
+                                <input type="text" id="newWord" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary">
+                            </div>
+                            <div>
+                                <label for="newTranslation" class="block text-sm font-medium text-gray-700 mb-1">中文翻译</label>
+                                <input type="text" id="newTranslation" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-primary">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <button id="addWordBtn" class="bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-lg btn-hover">
+                                <i class="fa fa-plus mr-2"></i>添加单词
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="font-bold text-gray-700 mb-3">批量导入单词</h4>
+                        <div class="flex items-center">
+                            <label for="wordFile" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg cursor-pointer transition-colors">
+                                <i class="fa fa-upload mr-2"></i>选择文件
+                            </label>
+                            <input type="file" id="wordFile" accept=".txt,.csv,.xlsx,.xls" class="hidden">
+                            <span id="fileName" class="ml-4 text-gray-500">未选择文件</span>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">支持TXT、CSV、Excel格式，每行格式为：单词(多个用逗号分隔),翻译</p>
+                        <div class="mt-4">
+                            <button id="importWordsBtn" class="bg-secondary hover:bg-secondary/90 text-white py-2 px-4 rounded-lg btn-hover">
+                                <i class="fa fa-download mr-2"></i>导入单词
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-200 pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-bold text-gray-700">我的单词库</h4>
+                            <div class="flex space-x-2">
+                                <button id="deleteAllWords" class="bg-danger hover:bg-danger/90 text-white py-1 px-3 rounded-lg text-sm btn-hover">
+                                    <i class="fa fa-trash mr-1"></i>清空
+                                </button>
+                                <div class="relative inline-block">
+                                    <button id="exportAllWords" class="bg-primary hover:bg-primary/90 text-white py-1 px-3 rounded-lg text-sm btn-hover">
+                                        <i class="fa fa-download mr-1"></i>导出
+                                    </button>
+                                    <div id="exportFormatMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg z-10">
+                                        <button id="exportAsTxt" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            导出为TXT
+                                        </button>
+                                        <button id="exportAsExcel" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            导出为Excel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">英文</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">中文</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="wordsTable">
+                                    <!-- 单词列表将通过JS动态添加 -->
+                                    <tr>
+                                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">暂无单词，请添加新单词</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-custom p-8 mb-8 card-hover">
+                    <h3 class="text-xl font-bold text-dark mb-6">学习设置</h3>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">提示设置</label>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input id="showFirstLetter" type="checkbox" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                <label for="showFirstLetter" class="ml-2 block text-sm text-gray-700">显示首字母</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="showWordLength" type="checkbox" checked class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                                <label for="showWordLength" class="ml-2 block text-sm text-gray-700">显示单词长度</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-200 pt-6">
+                        <h4 class="font-bold text-gray-700 mb-3">数据管理</h4>
+                        <div class="flex space-x-4">
+                            <button id="resetProgress" class="bg-danger hover:bg-danger/90 text-white py-2 px-4 rounded-lg btn-hover">
+                                <i class="fa fa-refresh mr-2"></i>重置学习进度
+                            </button>
+                            <button id="deleteAllData" class="bg-dark hover:bg-dark/90 text-white py-2 px-4 rounded-lg btn-hover">
+                                <i class="fa fa-trash mr-2"></i>删除所有数据
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <button id="saveSettings" class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full shadow-lg btn-hover">
+                        保存设置
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">单词学习助手</h3>
+                    <p class="text-gray-400">提高你的英语词汇量，轻松掌握新单词！</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">快速链接</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#dashboard" class="text-gray-400 hover:text-white transition-colors">仪表盘</a></li>
+                        <li><a href="#learn" class="text-gray-400 hover:text-white transition-colors">开始学习</a></li>
+                        <li><a href="#review" class="text-gray-400 hover:text-white transition-colors">错题复习</a></li>
+                        <li><a href="#settings" class="text-gray-400 hover:text-white transition-colors">设置</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">联系我们</h4>
+                    <ul class="space-y-2">
+                        <li class="flex items-center">
+                            <i class="fa fa-envelope-o mr-2 text-gray-400"></i>
+                            <a href="https://www.126.com" class="text-gray-400 hover:text-white transition-colors">wuxiaochui@126.com</a>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fa fa-weixin mr-2 text-gray-400"></i>
+                            <span class="text-gray-400">wxid_do5lg6q0fwp312</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+                <p>&copy; 2025 单词学习助手 | 版权所有</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 模态框 -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6 transform transition-all">
+            <div class="text-center mb-4">
+                <div id="modalIcon" class="inline-block bg-primary p-4 rounded-full mb-2">
+                    <i class="fa fa-info-circle text-3xl text-white"></i>
+                </div>
+                <h3 id="modalTitle" class="text-xl font-bold text-dark">提示</h3>
+            </div>
+            <p id="modalMessage" class="text-gray-600 mb-6 text-center">这是一条模态框消息</p>
+            <div class="flex justify-center">
+                <button id="closeModal" class="bg-primary hover:bg-primary/90 text-white font-bold py-2 px-6 rounded-full btn-hover">
+                    确定
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let appStartTime = new Date();
+        let membershipVerified = false;
+        
+        // 时间限制常量（30分钟）
+        const USAGE_TIME_LIMIT = 30 * 60 * 1000;
+        
+        // 初始化应用开始时间（使用多重存储验证）
+        function initAppStartTime() {
+            const now = Date.now();
+            const localStorageTime = localStorage.getItem('appStartTime');
+            const sessionStorageTime = sessionStorage.getItem('appStartTime');
+            const encryptedTime = localStorage.getItem('appStartTimeHash');
+            
+            // 如果有加密的时间戳，验证其完整性
+            if (encryptedTime) {
+                try {
+                    // 简单的验证逻辑：解密后的时间戳应该接近存储的时间
+                    const decrypted = atob(encryptedTime);
+                    const [storedTime, checksum] = decrypted.split('_');
+                    const expectedChecksum = String(parseInt(storedTime) + 12345);
+                    
+                    if (checksum === expectedChecksum && Math.abs(now - parseInt(storedTime)) < USAGE_TIME_LIMIT * 2) {
+                        // 加密时间有效，使用最早的有效时间
+                        if (localStorageTime && sessionStorageTime) {
+                            appStartTime = new Date(Math.min(parseInt(localStorageTime), parseInt(sessionStorageTime), parseInt(storedTime)));
+                        } else if (localStorageTime) {
+                            appStartTime = new Date(Math.min(parseInt(localStorageTime), parseInt(storedTime)));
+                        } else if (sessionStorageTime) {
+                            appStartTime = new Date(Math.min(parseInt(sessionStorageTime), parseInt(storedTime)));
+                        } else {
+                            appStartTime = new Date(parseInt(storedTime));
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    console.log('时间戳验证失败，使用默认时间');
+                }
+            }
+            
+            // 使用最早的有效时间戳
+            if (localStorageTime && sessionStorageTime) {
+                appStartTime = new Date(Math.min(parseInt(localStorageTime), parseInt(sessionStorageTime)));
+            } else if (localStorageTime) {
+                appStartTime = new Date(parseInt(localStorageTime));
+            } else if (sessionStorageTime) {
+                appStartTime = new Date(parseInt(sessionStorageTime));
+            } else {
+                // 首次访问，保存时间戳
+                appStartTime = new Date(now);
+                saveStartTime();
+            }
+        }
+        
+        // 保存开始时间（使用多重存储和加密）
+        function saveStartTime() {
+            const timeValue = appStartTime.getTime();
+            const checksum = String(timeValue + 12345);
+            const encryptedTime = btoa(`${timeValue}_${checksum}`);
+            
+            localStorage.setItem('appStartTime', timeValue);
+            sessionStorage.setItem('appStartTime', timeValue);
+            localStorage.setItem('appStartTimeHash', encryptedTime);
+        }
+        
+        // 检查时间是否超过限制
+        function checkTimeLimit() {
+            const now = Date.now();
+            const elapsed = now - appStartTime.getTime();
+            
+            // 如果时间被重置（当前时间早于开始时间），使用最早的有效时间
+            if (elapsed < 0) {
+                const localStorageTime = localStorage.getItem('appStartTime');
+                if (localStorageTime) {
+                    appStartTime = new Date(parseInt(localStorageTime));
+                    return now - appStartTime.getTime() > USAGE_TIME_LIMIT;
+                }
+            }
+            
+            return elapsed > USAGE_TIME_LIMIT;
+        }
+        
+        // 验证时间完整性
+        function verifyTimeIntegrity() {
+            const now = Date.now();
+            const localStorageTime = localStorage.getItem('appStartTime');
+            const sessionStorageTime = sessionStorage.getItem('appStartTime');
+            
+            // 如果localStorage和sessionStorage中的时间不一致，检测到异常
+            if (localStorageTime && sessionStorageTime) {
+                const diff = Math.abs(parseInt(localStorageTime) - parseInt(sessionStorageTime));
+                if (diff > USAGE_TIME_LIMIT) {
+                    // 时间被篡改，使用最早的时间
+                    appStartTime = new Date(Math.min(parseInt(localStorageTime), parseInt(sessionStorageTime)));
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        // 定期检查时间完整性
+        function startTimeIntegrityCheck() {
+            // 每分钟检查一次时间完整性
+            setInterval(() => {
+                if (!membershipVerified) {
+                    verifyTimeIntegrity();
+                    if (checkTimeLimit()) {
+                        checkUsageTime();
+                    }
+                }
+            }, 60000);
+        }
+        
+        // 监听页面可见性变化
+        function initVisibilityListener() {
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && !membershipVerified) {
+                    // 页面重新可见时，检查时间限制
+                    if (checkTimeLimit()) {
+                        checkUsageTime();
+                    }
+                }
+            });
+        }
+        
+        // 简单的加密函数，用于加密兑换码
+        function encryptCode(code) {
+            // 使用简单的字符替换和位置变换进行加密
+            let encrypted = '';
+            for (let i = 0; i < code.length; i++) {
+                let charCode = code.charCodeAt(i);
+                // 字符编码偏移
+                charCode += 3;
+                // 位置变换
+                let newIndex = (i + 5) % code.length;
+                encrypted = encrypted.padEnd(newIndex + 1, ' ');
+                encrypted = encrypted.substring(0, newIndex) + String.fromCharCode(charCode);
+            }
+            return encrypted;
+        }
+        
+        // 月会员兑换码（从兑换码.txt文件导入）
+        const monthlyCodes = [
+            "slfv-Pis3xo-7Wj7mq", "HuQa-gm7WEz-FX3O2L", "lv1j-7iesJh-nByh2R",
+            "9THY-pY1ei2-SMEW2W", "84pf-VLDfbO-GChDAL", "s7GS-fOvChg-UsDmmb",
+            "Nsgf-1616fR-XdKfrh", "SVLL-QuZqHq-kWxnmY", "TQJz-8pKOh4-uyQvxt",
+            "FdKj-GwXLU1-RZ5Py4", "Z3n4-WStoji-jTLy69", "QTsn-kwjyF4-AcQcZ8",
+            "OW0A-Cot3kQ-ryr4Gf", "7dd4-oUnfGJ-1yX08n", "FJ3T-jBO3VR-jJmkAx",
+            "qBN1-AGF2Dm-LYSybi", "yXBW-W60xKU-4MtlRN", "LNY2-2HFaQD-GzvZl2",
+            "Bwem-PnZ1yj-lyIVGm", "ZTF9-dWD7EP-VZzWfO", "99tc-70bZru-mF9qlY",
+            "6JFQ-SCCJmg-lQ46dF", "WGWs-S2gGhZ-i6rSK5", "J5I3-Jk1yjq-dBKHMi",
+            "ukNa-fP56Sr-BHVs9E", "IdnE-nSfmpf-l6GTBR", "r2am-nOgnGv-CFueej",
+            "MTSX-hfU9fl-MrVF2p", "l5MP-4osKW7-ABWnaN", "nlGN-nYTvlG-NGeAY1",
+            "UnBS-iM2Qrh-ESSYwF", "YBVY-q4Wcbs-3maZD5", "5KBk-KraoXD-aw0ZVL",
+            "Dul7-8yr7ul-QwKQ3n", "OoXU-ZKodsi-fmcHDK", "ZEx9-4eidb0-PABu7y",
+            "hEPr-hdA894-lY6uOo", "ZnOh-K5EHck-BTd54I", "OmtN-t9ei3i-sPuh5r",
+            "QB9z-xlctsX-rXtrsc", "2Mzr-Hk4VJM-oiAC9k", "8Yid-FUmQdL-t0xDa2",
+            "UA8H-kcQKio-O10YM9", "4ad3-1Tza6u-oVc72z", "WfaH-e3pJTp-GPkliX",
+            "eSeC-6QpBSD-EJOvSJ", "U6WC-oOVJs2-XQmB7s", "wxzR-2DTMHf-Z8SUe3",
+            "cAK5-ojfl6P-Sl7BwR", "Z14X-hrDfsK-0Kh0Bt", "D4JN-FR9TOF-6vVEUI",
+            "oQ9P-g1fxBY-wMWHng", "O1Oj-8wa4DH-HgskWw", "IeYG-wTRSi1-LekbAX",
+            "tC7W-GRVoV8-Z3KkFM", "Xgho-poUNaq-R8l17Y", "RNjW-v51KQ9-XzJeTK",
+            "BzUh-rcdCy9-bamviu", "0eiP-z3Epbc-irxp3e", "2BK5-nVroTK-KeBeI9",
+            "u7cW-Yh3yYJ-dn59dH", "x9l8-csT6UX-XL9bch", "aRWW-o6dQXG-dJBvvZ",
+            "2XUb-Um5nVg-lGOAor", "lgRv-nJtCSM-uBEv5T", "mNqH-gDGVwk-9tl5TL",
+            "k2bu-0iZYsj-oqWrrW", "ImIX-iVq3u2-jUOdZq", "Y20W-QQZv2c-8y3T9V",
+            "TWb7-WC4IRt-nJGEOy", "1JoA-cLJXMC-ScTrRz", "Z15x-WnYUiP-i0ssEc",
+            "zY9P-ZeeYiF-CNabdS", "uXzd-IjFNih-gF3nP1", "osBN-hCFc2e-7odJ3L",
+            "cv8P-b6pvj5-gYLCax", "cZh0-U3ahoI-dHQ9y3", "UsRm-8pVMCJ-kqjYiX",
+            "cVIg-nqAkrA-LfmWQQ", "4koW-haNuU7-Jlepb2", "UeRS-H0QsCV-cXwpGf",
+            "HuZg-lvCY7F-pwGVcA", "vR2Z-glnnCm-I1TSzk", "GDms-NxUh1C-aAndWM",
+            "MUWf-RWpGCU-wemhXo", "UuFq-oavg7G-HG37Is", "rFhK-7Ktcld-8emIyn",
+            "6fQD-gNDTu3-b98pzQ", "O6a3-QjoOFA-F5Gm0s", "AbgQ-HxsVv6-uEJfbA",
+            "FuTq-OHOd6e-BuDbW5", "Li4j-vB9UpD-Onmz7o", "04e2-wCOnL2-iM1UKU",
+            "AX1R-rTkrlr-C1iTfu", "VADn-ZqWE6B-FJuUUN", "xHJV-lYK1k7-ql7xam",
+            "MwX2-CNatLm-axZYG9", "RtMz-PcyTIi-nrKv6n", "LHjr-MOL8lk-jPskpN",
+            "UIIm-y807Og-qEVQl8", "XFTB-pKhyE7-Nrlm65", "s5vR-6zUvpH-FUJjVG",
+            "F853-nHkmj6-K5vPn5", "8kHd-KyIbb7-OeDns8", "Vdle-PMIGzW-OhMsOf",
+            "4rnH-PekuxH-xEuVzL", "Lvbd-CSv4yt-VvX8m8", "53fw-dYxLg8-1Ri0wU",
+            "siwM-O4iow2-sNmQbj", "B9SL-OjNKXv-YzjA7Q", "5kBh-cl3okG-X5TZrT",
+            "ZtQE-KDu2KI-sF6ijo", "zzdq-ksu3Xt-jVXglS", "nLeW-2AhCo3-vbwsj7",
+            "qmsz-gUlSNO-feFff9", "2HJW-pijpVs-RUp3pz", "cAns-Xs5E0r-UZ83CI",
+            "5ZPc-PpV50G-LAsSZ3", "EqpE-jiP5vb-Fjgj7i", "p5Sp-n34KxK-sH0Eud",
+            "jmHn-zrieWP-1mDARO", "slmD-ZmVbq3-Iu1cEP", "WPys-1uvM1Y-gQPmVJ",
+            "irMf-oG6x17-CfyJJJ", "G7Rd-z4l3ZW-NFgdhU", "W5jJ-rceDjm-noWxFx",
+            "j533-2h38VI-RjFPCj", "tSID-fTuRyQ-WcEB85", "XBco-EGu9Cd-0w2Ec0",
+            "nxnA-INebZk-ENeV9W", "KMie-HW0DQn-6Nzaih", "069U-L9MXf6-lqiJuy",
+            "Za9d-NpDJvb-PI6jUD", "S3QK-Z2YYHx-EYx6Hg", "2TfD-ZICjmv-fWMipa",
+            "B1U8-gqFyN5-XwpC3W", "4PCF-hVSCho-9waxjS", "4rm3-smRZ3I-f1rQbA",
+            "XrDR-9u7jkc-0YQfcZ", "YKJX-N8TsG1-kB3CZe", "9evZ-bOSpfF-qFfroh",
+            "gO5I-GR4Yaq-M3fEqw", "giO6-aaxvE2-HRihsH", "Z4SW-frD7BJ-vWfNEK",
+            "oeN5-qjT7SW-r1lnQ4", "xUVL-ZRTxzv-kG9DF0", "IAJY-YGCVr9-MBdTsT",
+            "hveI-GoiVMZ-JsdXLx", "AEYn-mnbxv0-EOGgCK", "q4UK-riurhN-wQVa2Y",
+            "25ak-NagDh9-5rP7qi", "tlhD-2rWCCm-sQ6l1f", "Gu7J-ja6uat-QWyeZ8",
+            "Q9M8-YzYqLW-3JCWYA", "9AFz-hHMYDO-Klc5Iy", "ctvw-TXkYPM-LT0ybo",
+            "8PGY-Hi4p5B-du8AOj", "vp47-41qxpb-w7zby0", "DUbL-PWS57x-OytcVK",
+            "nHIb-x4Pdm5-bsd8cw", "YlnZ-p3M4dF-YFSZbU", "0ZWB-MCEea4-9sVOu8",
+            "jYQy-oyjT6o-LgDXSG", "p8rL-23guHW-5o9L8f", "u0xM-JbmObs-RO6JEu",
+            "Eg0u-rbcMnL-N97HGf", "0Z7w-HnF8JN-20GWPD", "5gVz-vkCTxW-EWwEwD",
+            "Qv4o-myqqJG-CCIiS1", "osEH-ZuILnk-qW6yc6", "HQGV-wMjyhC-zjNPsp",
+            "wpnD-gxX2xa-noGCQl", "mAKw-2rXEbo-1RFvGC", "CFec-TfEDHO-zDhWke",
+            "jhq9-OxCWNs-NSJcst", "gyhu-x8JzLL-ciyW1S", "12jS-JTyV67-RL6CML",
+            "9OPR-vEDuCy-x1AcP7", "zoBS-Oab1d8-g8hO2A", "EOfh-bvgdV8-SFGT9M",
+            "Wtrs-EHaL4u-UO8Brh", "T4MX-P9usaa-kPVkwo", "uCzH-Mlbcxo-n2fS1j",
+            "HMeD-14wVPj-ppl9Wk", "ufKw-sAhcsh-fdVAe2", "NchK-D3z4kk-xjKoYm",
+            "9wU2-A8clam-IpU1Wi", "K94E-VhCuvD-097I2P", "wRPs-sXMynR-fMX7Ev",
+            "FFSP-KLDGz2-JnDZNj", "9YVH-AuOAF3-Sp3SnT", "X1oo-PrNoj2-VN92Q6",
+            "QSyz-ZeYzm0-EaXiUS", "ThnH-JexE7P-fvMt7V", "FfQn-1Rdkz1-3znQ88",
+            "msRy-D1wIz5-ag2pMF", "aZUf-iUfhn9-Qoq9sc"
+        ];
+        
+        // 季度会员兑换码（从兑换码.txt文件导入）
+        const quarterlyCodes = [
+            "xsxL-jLQHcu-D3GCWa", "BylG-ufkecl-slOoPx", "UiI1-reedhD-oPWchh",
+            "uVFQ-uszSOW-GeF4Cw", "KAEn-iQguPX-owqhoA", "35g4-aVG3ol-jccPv0",
+            "khjS-EasfSw-gdOcEI", "uC2D-SFaZKo-SIq9qa", "Hsfl-Ys0WlK-2e5OIu",
+            "dNHO-ZpWdfP-USZV51", "62a6-onwZpr-wHwepu", "V5oK-g0ysqt-9C92lu",
+            "ah7J-2ADgW0-8EpgtR", "48Ni-yeB88q-vbfj1I", "n6Nv-WcYy1N-m7jM1p",
+            "hLIr-PLMgJy-kONZb5", "eVSa-z7mdDV-gbJJ8O", "omr7-hzpCoF-Jbdwcm",
+            "TJMK-ERfO0n-HLgCdr", "ckt5-2bkQKe-j41vDD", "dXr2-yDsyVa-IQbngl",
+            "K1Vx-hGzBjd-o3gMX7", "Gnq5-LRc4Qz-acyuNG", "HNyZ-OTm235-VXiykG",
+            "8q1v-UzUJaU-aeJ5fB", "LM1s-AHGOPw-iTcfqt", "UAv0-7TjMJn-Gi7kxz",
+            "wKNC-9hsLIn-3oCXqi", "GxnU-A4UZie-PuPUbD", "cDA0-6yOpBB-oHYEfT",
+            "BreJ-iWljoD-SvpToN", "XsKb-oePZnx-DDAwXc", "ERrA-LjztOd-28mck7",
+            "E83X-83HGvh-KHIwnQ", "ePCb-aBuItN-Hdq2Um", "HsfY-Y9X7xP-esPxUO",
+            "Zp95-m2RoHA-wukCtr", "58VX-GGShsC-57qGsN", "iE4u-W6npdg-mKsfmz",
+            "41we-CJpEYD-fTyzlX", "lSdr-Nwucyf-Kjiv19", "77rN-Th1Wep-oi3Wn9",
+            "slsS-tl3ppt-WNp9xh", "PV1W-FYkBaf-Wly8Q3", "V2qL-ZvuWs4-dxoSZb",
+            "56bh-ioBbR8-dIKXuJ", "FPhZ-SphpbN-UhRMNp", "VQsF-ksb425-NkWbgs",
+            "6a89-SP2Wnx-adl9Ia", "kc9x-TCxQd9-rg9EvC", "Yvxb-lolg1y-p0OrYH",
+            "RLE4-DQaWsi-8OBGAW", "ct6G-6A2sqw-NRWYIF", "1rcq-DaGxgz-4JrgcB",
+            "V7o7-3wd14Y-bgljR0", "HFYG-laqmHn-N5gOQr", "rZwv-edmIjR-RAItyT",
+            "tJp7-InAscf-p2t9xk", "5yDi-YiI8iy-ScrI6K", "XwYv-qxodo6-fhb7fQ",
+            "qIQT-44GjVk-4IdWEz", "oHYN-1jXJRq-lAAksT", "OpJk-ilCZRW-pSBT5c",
+            "h7MN-aLNBNu-4kGpe9", "xO48-L7VaWN-9KzXXA", "2I16-o6Cxla-LQksxM",
+            "0jAP-MledWz-5LTt9y", "enbZ-nGebXt-FwRnLe", "kWVD-z2NE2W-3cc4jN",
+            "F8HZ-LTRTnF-ILGeIW", "oI8Y-MwGpEO-4jUIhZ", "j3Pn-i1PfOm-zxWV5t",
+            "yi6I-OIldSY-C7qe39", "xhyo-V3Isne-rpFFwJ", "UraE-opbOeN-JUYJ85",
+            "NWpM-PTfUQu-mZXxpT", "6v8k-3GaqHH-o9tVlE", "xY0r-4DcFgE-502J4X",
+            "T72K-W8nXqM-yvZOoY", "XffD-i5DF2H-c4Fozu", "8AZK-ykdJW0-oJipWZ",
+            "HYOG-ceAuHS-pvqSnI", "TpdF-zbu8bR-ojfSmD", "1hbB-MozJpT-oT2S3C",
+            "xFYd-iO6nn3-Vwc3ht", "irCw-FBWmBF-NpBHsj", "f3fj-sr6Kbs-UwDqFy",
+            "KHMP-90flTs-DRWpjO", "3pcm-XskUAb-CRgHaH", "WG7R-r91QDf-0Yr7jq",
+            "gvZT-IZRR5g-8uVfYi", "Ottb-h7qaeW-c2Cwy2", "5Nvi-ZGJdTX-37woGj",
+            "5BUX-izhPRS-nF3D83", "70W5-DOk8aN-9y8wcO", "j3yx-fqDmCW-9bGLJZ",
+            "IvmV-LEuiQU-SGpPpv", "qT0q-tzreyv-5MT5aJ", "NdDF-gWja1U-kaZyWr",
+            "WALR-keEkIn-VfEMZV", "YjDN-oM18kp-0EZuXG", "imOr-JGuJxd-63VHP7",
+            "tWsA-XTUYZ0-F9AZaI", "4u9W-YlomMs-k97G4S", "sOXs-q48b46-dTXEAX",
+            "ysDm-9BcXyq-5Cdsjt", "DPyv-YspzKf-WfBodd", "1b6f-BIbdxq-9FyA48",
+            "VlOs-SaBn2C-TbIi48", "LAdz-jFg4rE-2WiiQV", "YxQf-eovXrd-vTHOTm",
+            "yItb-190dli-wlzk9s", "Xh80-DYdeOI-0NYpcX", "Umnt-HLFgM2-3GqWX0",
+            "Jrtc-yPUWos-RtkmH7", "jfni-WRHkVE-wuS8cZ", "3UEQ-iNTXQW-Q4ojYB",
+            "0EWq-rF02Xe-PMOnO0", "if4T-ffYu5x-AY3gbp", "NLgP-m1tLKn-NsvVAM",
+            "R1U9-Ct7qzh-qBnloP", "akxh-3IaeF2-IRMJvH", "jsGT-hGDD59-9cQwLf",
+            "qYWq-dMfhjy-v6eLUx", "G92g-bTHKRF-1HMcaz", "dz58-H8evL9-vzgiKI",
+            "VhYb-a7hWjn-bbTyA8", "4uBQ-5p8Wuu-CTgjLs", "kbEq-Zz5rwA-v0gRkT",
+            "VmEn-lQI4Gh-0TiILX", "hfK7-P6Vw8o-nUoMPd", "SQIY-eChIPY-2uFRmC",
+            "RQN5-zCjaIy-O3Ueog", "KMy1-UMhTgz-dCgnWl", "9QOx-NugLd9-VwKl1r",
+            "vzrd-79h1fL-pcPhqa", "mDow-XC8zOp-3kcFO4", "W9lA-YMBWOY-nI0IOw",
+            "F8bN-HEp35B-RRf8MY", "x5oQ-4zg9Vc-qxQBxo", "nX57-WcbE5t-MdF9O3",
+            "J0cK-g219YT-v2ngkK", "vxKj-nY3AvK-CVbxCK", "tSUZ-hRsZ8E-Qf2pzb",
+            "Ocdv-ILLEhp-X93VYk", "Gsql-tmVwLv-DK3l1n", "mK6L-FcGTuS-Kaf0U0",
+            "bDSu-um4Jnj-pl2QWp", "tlI1-aiVm4J-G9HRb6", "x46J-NnIhLb-Bh8Jm7",
+            "NRHT-snOwwf-nC6rV0", "Cq0u-DqQesp-Z1xWRd", "zRuV-uD3fDb-FPsbVq",
+            "i0t3-zhgyzk-14A2Qi", "jjrV-7DeuQL-MGU7CU", "G80o-snexik-dGp9qp",
+            "B4iu-ksBtLX-Buesxm", "ipDZ-ENzRuu-w8wo6V", "X2Mb-7wflcR-v8qAcV",
+            "PLeJ-pmvyQ2-ie7GGE", "eRvv-2M5QDr-Q8zc0p", "aC8F-u6HOCe-bdmjYx",
+            "LFso-sexqH1-jvbqv9", "5GHb-VZdDWy-b2g6sE", "U3Ee-1M5Txn-ABVuBT",
+            "Fqa0-H0WBOZ-FU1svd", "dPgi-8guTQ2-JfWwQF", "KjBP-QAEyrC-lQzSd9",
+            "yJNg-PBo062-9zXvjS", "I4Xb-uDZGF3-Nklhdu", "Xmom-qnDr16-i7PIu7",
+            "u6C3-Ugwpla-UIfX9K", "OZpz-nWOPWf-P9XLuY", "yCFp-dcYY0J-KdgcPD",
+            "RB5Q-AfoLze-wLDv6N", "Gf2Z-10HR8o-TMLW5S", "82nN-GpW1v2-IXaiq0",
+            "kBul-UXyJD3-EscH2c", "hzFk-9mLz69-MyWbSr", "zuqL-R4nB3M-2Wp4xG",
+            "4ZfX-taY8XD-bKGFbp", "qI0v-o3iPrr-VA4WUP", "a7Mz-gBNeca-81Gb2u",
+            "SmSx-Waj2fb-Km2OMk", "aPwc-iFWxkW-kKHWSM", "ChRq-Kxz2jf-27oayH",
+            "vbYW-ldKWUe-Mly1Dl", "jpbV-xmJfrT-kkymaq", "XEjM-GLC94d-a3cenc",
+            "5Swl-SLv9oS-5h1xLL", "bvwf-01xYzd-jJk3P9", "n7ep-OBrJeW-z9zm2S",
+            "KCZr-xrPZXc-oOyeWg", "S0Uf-E57Kd8-cxT8EI", "cicQ-eRpWmb-y9ekih",
+            "6hFA-TswZ7d-czskna"
+        ];
+        
+        // 年度会员兑换码（从兑换码.txt文件导入）
+        const annualCodes = [
+            "SDFp-1IBElM-WugWZE", "ovjw-BAEIZB-KauzRG", "gk99-txrbA1-vbZ50X",
+            "S99k-UytKDg-SNZPYz", "4Xe3-f1Dk0X-mKZSkA", "XJ7y-2GW7j5-KxBuHP",
+            "IEoH-KnbNv1-JKRmJp", "4nvY-thPmde-zL1H8n", "ny4L-SlBgGi-sLpasU",
+            "D5FW-2bO2tf-1aEH13", "FRSu-hHTLGh-yrMzJZ", "cAFM-udzanT-J1Yc6c",
+            "WXMo-2IRZWy-syW420", "LQed-jLhcXt-5yxY7K", "UUe1-M4z5Cg-kN0FLy",
+            "BPVO-MUeMp5-nrj8Zo", "Y1MY-y7W3x3-wOn4Y3", "Knmr-GKTCjg-OaJawk",
+            "BEC1-N9oEnh-HwQfEo", "ilSq-DkVRBu-wriIs8", "XGiJ-6rR1xb-jc3zEa",
+            "je0f-gWSThF-7A0mzg", "aXf7-toMDSr-eYw1IP", "pXQi-DBqSRo-GJO4M5",
+            "Pi3K-W3wZY9-dMiwvV", "3xqZ-JmnOo0-fkKZfO", "GR31-g2w4ss-apYheB",
+            "rEtE-y6CeqJ-XZBDSo", "xvbv-SvP6Cr-tRZUUO", "yTzs-xwPHiI-h9NX56",
+            "uWtj-f1epLh-jNDuk8", "PVv6-HtvW4A-dzY3Y7", "u6Ku-UGAAPU-UCRn3F",
+            "9GpH-2krtL8-JvwaOz", "Gk7g-le2nmV-HaKvJK", "hTJD-GarP7z-tcTHsf",
+            "S2XS-QpkiaP-oj6pkL", "DmmX-KoZpkk-zvmFyF", "v3Ni-vUZ3bO-OC5KI3",
+            "oN8I-3n0ii3-mLUO7X", "p7Gj-Fh4qna-LhB6vt", "Il7L-zhJ9TJ-4o1vNM",
+            "iEw3-DCC84Y-NaIilb", "pm28-NqvC3U-2aEfmZ", "oNoD-xrUaAn-XPwLko",
+            "i0ns-QJ0vjn-PDFL65", "14dP-9W0SX4-hMvr5E", "bO4O-cWGiWN-wJQaMu",
+            "D00S-z2mFCO-d2sp80", "vhno-M0AGyY-A4lSvA", "L9bF-N06TmH-BrKYn2",
+            "stRt-iDRXja-AZDGYz", "36kB-nETJds-84imK6", "cQDj-Oh20S1-Moi84J",
+            "ZXLP-gg445S-fktv2a", "AaXc-wBFkGV-e7tenM", "DOAd-TmyRhH-KGhqwM",
+            "BusV-ali7DI-MrKP8R", "O6ZE-drMCA5-PMXaoT", "iQem-gRZtnZ-qD9rFG",
+            "5y4A-NfG8aX-EoefwD", "F4nR-g0DX1X-pJ6f5m", "gyBe-WUAQ9h-ThQAJ2",
+            "fwxA-Uxt2IM-pREnr8", "l4nr-eakCdK-CJGue4", "ccjA-KM57sa-a6ZzxD",
+            "0Fdo-alcSvX-Ip1gIL", "gbqL-UL0WOJ-SuCXdK", "BJNT-x5XwPN-zgf9qu",
+            "G3e5-NhPYod-zv3sJW", "Kdyb-29rf1r-PQKioF", "0L1u-chylMr-M7uLsH",
+            "6QSs-pZdfvb-SX79Bc", "1iST-pRpmJC-xNwa3O", "iz4w-9eV3WH-eWU22j",
+            "GwWT-fPm2Aq-ty1bSo", "kyqF-cwArea-XGmSgh", "cVLa-wUNvb4-tfTKUi",
+            "ZNz2-fYIQ1U-moe7IU", "ghN0-MVstmw-fpH8KZ", "NUk8-1M6kac-BbtTqK",
+            "f8MK-16PUxH-V3QxTc", "7k8P-M5nIj8-ZEQoT6", "HguE-Klz7K2-KbQk5B",
+            "6RIu-8Kt2Ac-h5HgfD", "TbrV-m0rqV4-FDyDjS", "PIPU-x13EIj-qoibri",
+            "2Zfp-psmRp8-RqEE6r", "6sHA-6sf3AL-mBb6Dy", "dia1-XGBHjr-nywtvf",
+            "uaan-utdRjH-L3Exrk", "Koy0-0FyPUw-agaJu3", "34m5-CB6Qq3-id8svq",
+            "xcH5-tmLAQD-7kATJ7", "9WEp-CPlfWk-Z7KyPf", "ynpG-douAoI-eAwxGr",
+            "4ArY-NUb58X-Yzfq68", "1lo9-RYzEmE-z055Jr", "JgXp-3kTo8L-4itLJv",
+            "audT-yoss2j-i2nMJt", "pRP5-6wN0Tt-SAlfxy", "tpdT-iJ59oZ-kXOVRd",
+            "hKW0-xIivNe-7VT621", "fSL5-Ohfhh9-Dw1sor", "pXXR-JmbCVW-FEzD3g",
+            "m4ur-qipr2c-ZI5FZl", "vPG8-fWx8r3-zVtSSw", "80Eg-ykY1wg-GyxIT7",
+            "aoUb-qqgyml-51qVrm", "xojF-W0g5ay-kJWxOh", "Wobd-erTLpA-bb37ic",
+            "Y2H7-yN17Vy-fvDhsb", "rU1X-H3FDmc-zPgIiS", "aqKs-vUiiPk-RcJgua",
+            "6bOL-TlXq2k-Ji8oL8", "0l2v-CbtMJV-P0BGU4", "MKl9-mNssOF-W594sI",
+            "XIvQ-KhDcAG-Vmq39f", "7zMb-NXYYWy-VKD2O5", "QLse-RADfoT-RscvYj",
+            "qUMs-rvEbuM-s4VKZ3", "Zvz1-fDSNyr-HEssej", "CrQf-hUwYuS-hVipbL",
+            "GHBk-qWjQJk-INndj7", "rl4l-1CX9kW-GNlLwZ", "AKyc-NPIgcr-Xscq7m",
+            "tF6p-5K7zfl-xz7h8K", "y8CD-D6dwyu-1J3D3i", "f75U-9DuQDe-tYyRSH",
+            "o1uH-cFmYKI-jF86nW", "JBw0-OonuBb-6VXG1S", "Q5Py-Slfpmv-1Vpdj6",
+            "Lj3h-KYvGym-JKNnJt", "gF7y-V3AlVw-7WhoYw", "k6No-LQ4lap-ZeyzsF",
+            "Mnu8-Vmtolf-NdctDd", "hdFI-qTSB5z-a9J57f", "vJNq-lRiS91-oSvZE1",
+            "M0gt-mmxGFZ-gqeFNw", "aXKI-avPTg6-b8IodC", "b7tR-8bnRb5-tZ8zPw",
+            "Y78H-AXizP3-8qTkkb", "ARBP-m9br4q-jWifjx", "ACVC-XqLq8v-GuK9c4",
+            "SiW2-KOys2F-fKRkuf", "u6UP-8K5oaZ-lFYxCa", "0bIx-zPWwfh-K8J150",
+            "iYa6-BPWECq-u023JS", "Q2X0-4XlkBU-0Lvo9U", "iYdd-XFRFaT-gjMwfn",
+            "MMD8-uejFpQ-ZvBAwG", "ypZC-vZTQKG-mPO09H", "ONGU-lEaXko-TMm4ZW",
+            "0uTG-pC5N9c-KSIBJ5", "XFrr-YhSZVC-AcUZs1", "lCgy-PpeGhb-LSiiC6",
+            "xHYn-SVZsa3-ylLagw", "owWR-SODSjn-zVRaFV", "Pq3s-KzXWCl-7pXKja",
+            "AdTG-Bq0UN7-mmVjUu", "VFWA-lcAarM-AgiLJf", "xZXM-XfZVRX-Lw0SWv",
+            "3o4r-Uh6Y6V-cyAmb8", "DZem-Mvi6Ud-s2mA7n", "gzwZ-DP8mk5-kKSoLV",
+            "Tk6W-3rEoyo-dU64yZ", "fsCx-yXvlU0-Shuapw", "FpSm-UaSIMq-yEllE9",
+            "zjjA-LzECLB-92FAgc", "Piqo-tBkPCf-ywygXV", "0okO-T5TgdT-2XU3uP",
+            "c8tK-h28I6h-Vyk7o9", "pEgo-FRh4Gg-SnKyei", "JNce-SnEXA5-Od09SZ",
+            "yAml-qCZvuo-BFLUbU", "h7zG-uWqbEL-QvV7e0", "UslY-iJZQOP-5uRMZ5",
+            "kwmH-cP3Px2-3dphDT", "iAND-bmmP3e-FGHqgX", "E1C6-ixpUX2-IbMYEH",
+            "TPYo-9O9mn3-XRnJJh", "Kjmr-dKGsWL-v2CTIR", "1FGw-B9uGM6-8vOtVe",
+            "d2XT-L6CEcZ-9FEJ7w", "p3C9-HP6vkG-o7K9Zw", "d0Ef-OPTZAk-xz26CO",
+            "vZjC-gfJkgg-p2Fkok", "OBNr-cuWQ8C-WkcOOw", "dWkj-dXrbK1-G8LgJD",
+            "AtmU-zCpq1f-9taXh2", "eg6Q-35LGMJ-JtzsQt", "AKBF-3kqFt9-oBRluk",
+            "g1av-OMyth4-DIH36o", "akXg-lmvTDQ-AEPavW", "JmgV-ZjC1Qp-aRW7DF",
+            "72Y8-jeUOGN-nOhbgU", "UBpO-HG7CP9-v3sSSm", "vHAe-yyolSP-I5ndHv",
+            "9htj-Z1kxn2-PSdy8N", "8CVl-9S3xM4-PdHHYK", "XWcx-L9mePE-PDBbTJ",
+            "Vrzj-shmVg5-un5est", "Jw6G-uYTDBz-n23V62", "TKYT-sCPHu0-OAmlhr",
+            "h7hS-gEpTdX-MFcHO5", "bJr4-gTcOpt-bZR6nR", "FTVx-Or6hQg-ahwHnr",
+            "ksyF-dp0bkT-OZS7cO", "kCFi-W6vJtz-befdK0", "oVhY-J2dpxO-VT1vxQ",
+            "Z18h-Feo0T5-81R2PA", "ZwtY-IDvBaa-6TWDl0", "sygw-kehAiT-6sUHjb",
+            "j5D3-Kh3Mcg-w62JQC", "w3K1-qAl8Mn-TQojcz", "2cNQ-rarDPK-8ZAMJ4",
+            "FjUP-ZHzqij-z901sA", "P4Cd-4PNVgt-DXMQT2", "3Iia-FhFeSQ-qbZlIK",
+            "upVl-tZ3dOW-Wzzru4", "6IBN-45TTA6-W38TXp", "opRD-PLKEYP-i0FLa5",
+            "LdUq-WQ6g2S-YacJrX", "VYcL-445Mfy-1bVqa6", "kmI5-j88JI2-OTLfuF",
+            "mxZq-eBJFWH-tWtz8j", "52LH-gUTEfX-oNBsxe", "9zEI-TbXjGg-vMIySV",
+            "jvbh-gt3TgK-slhmWV", "XVBu-HZ7RgB-y5lVld", "dj8T-zZUloM-ctgh2d",
+            "buWx-HK13Fu-2pV3wb", "9M60-LDuMEJ-CysVP3", "QxCe-cuoCMf-slUI6f",
+            "e0LV-SkwF0i-uE6AR9", "3U2s-2n9FFt-JAvciU", "0bHI-39z8Wk-r7M6J6",
+            "OXNq-00PoAB-J5Ftjw", "iMpb-Nqa2ZJ-KzAR6j"
+        ];
+        
+        // 合并所有类型的兑换码
+        const validRedeemCodes = [...monthlyCodes, ...quarterlyCodes, ...annualCodes];
+        
+        // 当前选择的会员类型
+        let selectedMembershipType = 'monthly';
+        
+        // 当前反馈的单词ID
+        let currentFeedbackWordIndex = -1;
+        let isReviewMode = false;
+
+        // 数据模型
+        const appState = {
+            words: [
+                { english: "apple", chinese: "苹果", correct: 0, wrong: 0 },
+                { english: "banana", chinese: "香蕉", correct: 0, wrong: 0 },
+                { english: "cherry", chinese: "樱桃", correct: 0, wrong: 0 },
+                { english: "date", chinese: "枣", correct: 0, wrong: 0 },
+                { english: "elderberry", chinese: "接骨木果", correct: 0, wrong: 0 },
+                { english: "fig", chinese: "无花果", correct: 0, wrong: 0 },
+                { english: "grape", chinese: "葡萄", correct: 0, wrong: 0 },
+                { english: "honeydew", chinese: "蜜瓜", correct: 0, wrong: 0 },
+                { english: "kiwi", chinese: "猕猴桃", correct: 0, wrong: 0 },
+                { english: "lemon", chinese: "柠檬", correct: 0, wrong: 0 },
+                { english: "mango", chinese: "芒果", correct: 0, wrong: 0 },
+                { english: "nectarine", chinese: "油桃", correct: 0, wrong: 0 },
+                { english: "orange", chinese: "橙子", correct: 0, wrong: 0 },
+                { english: "peach", chinese: "桃子", correct: 0, wrong: 0 },
+                { english: "quince", chinese: "榅桲", correct: 0, wrong: 0 },
+                { english: "raspberry", chinese: "树莓", correct: 0, wrong: 0 },
+                { english: "strawberry", chinese: "草莓", correct: 0, wrong: 0 },
+                { english: "tangerine", chinese: "橘子", correct: 0, wrong: 0 },
+                { english: "watermelon", chinese: "西瓜", correct: 0, wrong: 0 },
+                { english: "zucchini", chinese: "西葫芦", correct: 0, wrong: 0 },
+            ],
+            learnedWords: [],
+            wrongWords: [],
+            currentWordIndex: 0,
+            currentReviewWordIndex: 0,
+            reviewWords: [], // 当前复习的单词列表
+            settings: {
+                showFirstLetter: true,
+                showWordLength: true
+            },
+            history: [],
+            dailyGoal: 20,
+            today: new Date().toDateString(),
+            todayLearned: 0,
+            sessionWords: [] // 当前学习会话的单词
+        };
+
+        // DOM元素
+        const sections = {
+            welcome: document.getElementById('welcome'),
+            dashboard: document.getElementById('dashboard'),
+            learn: document.getElementById('learn'),
+            review: document.getElementById('review'),
+            settings: document.getElementById('settings'),
+            redeemCode: document.getElementById('redeemCode')
+        };
+
+        // 模态框元素
+        const modal = {
+            element: document.getElementById('modal'),
+            icon: document.getElementById('modalIcon'),
+            title: document.getElementById('modalTitle'),
+            message: document.getElementById('modalMessage'),
+            closeBtn: document.getElementById('closeModal')
+        };
+
+        // 初始化应用
+        function initApp() {
+            // 初始化开始时间（使用多重存储验证）
+            initAppStartTime();
+            
+            // 启动时间完整性检查
+            startTimeIntegrityCheck();
+            
+            // 监听页面可见性变化
+            initVisibilityListener();
+            
+            // 检查会员状态
+            const savedMembership = localStorage.getItem('membershipVerified');
+            if (savedMembership === 'true') {
+                membershipVerified = true;
+            } else {
+                // 设置30分钟后显示会员提示
+                setTimeout(() => {
+                    if (!membershipVerified && checkTimeLimit()) {
+                        checkUsageTime();
+                    }
+                }, USAGE_TIME_LIMIT);
+            }
+
+            // 加载本地存储的数据
+            loadFromLocalStorage();
+            
+            // 设置导航栏滚动效果
+            window.addEventListener('scroll', () => {
+                const navbar = document.getElementById('navbar');
+                if (window.scrollY > 10) {
+                    navbar.classList.add('py-2');
+                    navbar.classList.remove('py-3');
+                } else {
+                    navbar.classList.add('py-3');
+                    navbar.classList.remove('py-2');
+                }
+            });
+
+            // 移动端菜单切换
+            document.getElementById('menuToggle').addEventListener('click', () => {
+                const mobileMenu = document.getElementById('mobileMenu');
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // 导航链接事件
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    showSection(targetId.substring(1));
+                    if (window.innerWidth < 768) {
+                        document.getElementById('mobileMenu').classList.add('hidden');
+                    }
+                });
+            });
+
+            // 开始学习按钮
+            document.getElementById('startBtn').addEventListener('click', () => {
+                startLearning();
+            });
+
+            // 返回仪表盘按钮
+            document.getElementById('backToDashboard').addEventListener('click', () => {
+                showSection('dashboard');
+                updateDashboard();
+            });
+
+            // 返回仪表盘(复习)按钮
+            document.getElementById('backFromReview').addEventListener('click', () => {
+                showSection('dashboard');
+                updateDashboard();
+            });
+
+            // 检查答案按钮
+            document.getElementById('checkBtn').addEventListener('click', checkAnswer);
+            document.getElementById('answerInput').addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') checkAnswer();
+            });
+
+            // 下一个单词按钮
+            document.getElementById('nextBtn').addEventListener('click', nextWord);
+
+            // 复习检查答案按钮
+            document.getElementById('reviewCheckBtn').addEventListener('click', checkReviewAnswer);
+            document.getElementById('reviewAnswerInput').addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') checkReviewAnswer();
+            });
+
+            // 复习下一个单词按钮
+            document.getElementById('reviewNextBtn').addEventListener('click', nextReviewWord);
+
+            // 显示提示按钮
+            document.getElementById('showHint').addEventListener('click', showHint);
+            document.getElementById('reviewHint').addEventListener('click', showReviewHint);
+
+            // 导出按钮
+            document.getElementById('exportBtn').addEventListener('click', exportHistory);
+
+            // 保存设置按钮
+            document.getElementById('saveSettings').addEventListener('click', saveSettings);
+
+            // 添加单词按钮
+            document.getElementById('addWordBtn').addEventListener('click', addNewWord);
+
+            // 单词文件选择
+            document.getElementById('wordFile').addEventListener('change', (e) => {
+                const fileName = e.target.files[0]?.name || '未选择文件';
+                document.getElementById('fileName').textContent = fileName;
+            });
+
+            // 导入单词按钮
+            document.getElementById('importWordsBtn').addEventListener('click', importWords);
+
+            // 删除所有单词按钮
+            document.getElementById('deleteAllWords').addEventListener('click', deleteAllWords);
+
+            // 导出所有单词按钮
+            document.getElementById('exportAllWords').addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('exportFormatMenu').classList.toggle('hidden');
+            });
+
+            // 点击其他地方关闭导出格式菜单
+            document.addEventListener('click', (e) => {
+                const exportBtn = document.getElementById('exportAllWords');
+                const menu = document.getElementById('exportFormatMenu');
+                if (!exportBtn.contains(e.target) && !menu.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            });
+
+            // 导出为TXT
+            document.getElementById('exportAsTxt').addEventListener('click', () => {
+                exportWords('txt');
+                document.getElementById('exportFormatMenu').classList.add('hidden');
+            });
+
+            // 导出为Excel
+            document.getElementById('exportAsExcel').addEventListener('click', () => {
+                exportWords('excel');
+                document.getElementById('exportFormatMenu').classList.add('hidden');
+            });
+
+            // 重置学习进度按钮
+            document.getElementById('resetProgress').addEventListener('click', resetProgress);
+
+            // 删除所有数据按钮
+            document.getElementById('deleteAllData').addEventListener('click', deleteAllData);
+
+            // 关闭模态框按钮
+            modal.closeBtn.addEventListener('click', () => {
+                modal.element.classList.add('hidden');
+            });
+
+            // 关闭更新说明模态框
+            document.getElementById('closeUpdateModal').addEventListener('click', () => {
+                document.getElementById('updateModal').classList.add('hidden');
+            });
+
+            // 反馈相关事件
+            document.getElementById('disagreeBtn').addEventListener('click', () => {
+                isReviewMode = false;
+                currentFeedbackWordIndex = appState.currentWordIndex;
+                document.getElementById('feedbackModal').classList.remove('hidden');
+            });
+
+            document.getElementById('reviewDisagreeBtn').addEventListener('click', () => {
+                isReviewMode = true;
+                currentFeedbackWordIndex = appState.currentReviewWordIndex;
+                document.getElementById('feedbackModal').classList.add('hidden');
+                document.getElementById('feedbackModal').classList.remove('hidden');
+            });
+
+            document.getElementById('cancelFeedback').addEventListener('click', () => {
+                document.getElementById('feedbackModal').classList.add('hidden');
+            });
+
+            document.getElementById('submitFeedback').addEventListener('click', submitFeedback);
+
+            // 其他原因显示/隐藏
+            document.querySelectorAll('input[name="feedbackReason"]').forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const otherReasonContainer = document.getElementById('otherReasonContainer');
+                    if (document.getElementById('reason3').checked) {
+                        otherReasonContainer.classList.remove('hidden');
+                    } else {
+                        otherReasonContainer.classList.add('hidden');
+                    }
+                });
+            });
+
+            // 复习完成相关按钮
+            document.getElementById('reviewAgainBtn').addEventListener('click', reviewAgain);
+            document.getElementById('finishReviewBtn').addEventListener('click', finishReview);
+            document.getElementById('backAfterReviewBtn').addEventListener('click', () => {
+                showSection('dashboard');
+                updateDashboard();
+            });
+
+            // 导出错题按钮
+            document.getElementById('exportWrongWordsBtn').addEventListener('click', exportWrongWords);
+
+            // 重新开始学习按钮
+            document.getElementById('restartLearnBtn').addEventListener('click', restartLearning);
+
+            // 修改单词相关事件
+            document.getElementById('cancelEditWord').addEventListener('click', () => {
+                document.getElementById('editWordModal').classList.add('hidden');
+            });
+
+            document.getElementById('saveEditWord').addEventListener('click', saveEditedWord);
+
+            // 会员相关事件
+            document.getElementById('alreadyPurchased').addEventListener('click', () => {
+                document.getElementById('membershipTypeContainer').classList.remove('hidden');
+                document.getElementById('modalRedeemCodeContainer').classList.remove('hidden');
+            });
+            
+            // 购买会员按钮点击事件
+            document.getElementById('buyMembershipDirect').addEventListener('click', () => {
+                window.open('https://dancibaovip.netlify.app/', '_blank', 'noopener,noreferrer');
+            });
+
+            // 会员类型选择事件
+            document.querySelectorAll('.membership-type-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // 移除所有按钮的active类
+                    document.querySelectorAll('.membership-type-btn').forEach(b => {
+                        b.classList.remove('active');
+                        b.classList.remove('bg-primary', 'text-white');
+                        b.classList.add('bg-gray-200', 'text-gray-800');
+                    });
+                    // 为当前按钮添加active类
+                    e.target.classList.add('active');
+                    e.target.classList.remove('bg-gray-200', 'text-gray-800');
+                    e.target.classList.add('bg-primary', 'text-white');
+                    // 更新当前选择的会员类型
+                    selectedMembershipType = e.target.dataset.type;
+                });
+            });
+
+            // 为模态框中的验证按钮添加事件监听器
+            document.getElementById('modalVerifyCode').addEventListener('click', verifyRedeemCode);
+            // 为核销兑换码页面中的验证按钮添加事件监听器
+            document.querySelectorAll('#verifyCode').forEach(btn => {
+                btn.addEventListener('click', verifyRedeemCode);
+            });
+
+            // 会员中心下拉菜单交互
+            const membershipCenterBtn = document.getElementById('membershipCenterBtn');
+            const membershipDropdown = document.getElementById('membershipDropdown');
+            const redeemCodeLink = document.getElementById('redeemCodeLink');
+            
+            // 点击会员中心按钮显示/隐藏下拉菜单
+            membershipCenterBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                membershipDropdown.classList.toggle('hidden');
+            });
+            
+            // 点击核销兑换码链接导航到核销页面
+            redeemCodeLink.addEventListener('click', (e) => {
+                e.stopPropagation();
+                membershipDropdown.classList.add('hidden');
+                // 导航到核销兑换码页面
+                showSection('redeemCode');
+            });
+            
+            // 点击页面其他区域关闭下拉菜单
+            document.addEventListener('click', (e) => {
+                if (!membershipCenterBtn.contains(e.target) && !membershipDropdown.contains(e.target)) {
+                    membershipDropdown.classList.add('hidden');
+                }
+            });
+
+            // 初始化页面
+            renderWordsTable();
+            renderWrongWordsList();
+        }
+
+        // 检查使用时间
+        function checkUsageTime() {
+            if (!membershipVerified) {
+                // 生成随机订单号
+                const orderNumber = 'ORD' + Date.now() + Math.floor(Math.random() * 1000);
+                document.getElementById('orderNumber').textContent = orderNumber;
+                document.getElementById('membershipModal').classList.remove('hidden');
+            }
+        }
+
+        // 验证兑换码
+        function verifyRedeemCode() {
+            // 根据当前显示的页面获取正确的兑换码输入框
+            let codeInput;
+            if (document.getElementById('redeemCode').classList.contains('hidden')) {
+                // 从模态框中获取兑换码
+                codeInput = document.getElementById('modalRedeemCode');
+            } else {
+                // 从核销兑换码页面获取兑换码
+                codeInput = document.getElementById('redeemCodeInput');
+            }
+            
+            const code = codeInput.value.trim();
+            let isValid = false;
+            
+            // 根据选择的会员类型验证兑换码
+            switch (selectedMembershipType) {
+                case 'monthly':
+                    isValid = monthlyCodes.includes(code);
+                    break;
+                case 'quarterly':
+                    isValid = quarterlyCodes.includes(code);
+                    break;
+                case 'annual':
+                    isValid = annualCodes.includes(code);
+                    break;
+            }
+            
+            if (isValid) {
+                membershipVerified = true;
+                localStorage.setItem('membershipVerified', 'true');
+                // 隐藏可能显示的会员模态框
+                document.getElementById('membershipModal').classList.add('hidden');
+                showModal('验证成功', '会员已激活，感谢您的支持！', 'success');
+                // 如果是在核销兑换码页面，清空输入框
+                codeInput.value = '';
+            } else {
+                showModal('验证失败', '兑换码无效或与选择的会员类型不匹配，请重新输入', 'error');
+            }
+        }
+
+        // 显示指定区域
+        function showSection(sectionId) {
+            // 检查会员状态，如果未验证且超过30分钟，显示会员提示
+            // 核销兑换码页面不需要检查，直接显示
+            if (!membershipVerified && sectionId !== 'welcome' && sectionId !== 'redeemCode' &&
+                checkTimeLimit()) {
+                checkUsageTime();
+                return;
+            }
+
+            // 隐藏所有区域
+            Object.keys(sections).forEach(key => {
+                sections[key].classList.add('hidden');
+            });
+            
+            // 显示指定区域
+            if (sections[sectionId]) {
+                sections[sectionId].classList.remove('hidden');
+                
+                // 如果显示的是仪表盘，更新数据
+                if (sectionId === 'dashboard') {
+                    updateDashboard();
+                } 
+                // 如果显示的是复习页面，初始化复习
+                else if (sectionId === 'review') {
+                    initReview();
+                }
+                // 如果显示的是设置页面，加载设置
+                else if (sectionId === 'settings') {
+                    loadSettings();
+                }
+            }
+        }
+
+        // 开始学习
+        function startLearning() {
+            // 检查是否有单词
+            if (appState.words.length === 0) {
+                showModal('提示', '请先添加单词才能开始学习', 'info');
+                return;
+            }
+
+            // 选择所有单词进行学习
+            appState.sessionWords = [...appState.words];
+            // 打乱顺序
+            shuffleArray(appState.sessionWords);
+            
+            appState.currentWordIndex = 0;
+            showSection('learn');
+            renderCurrentWord();
+            updateLearnProgress();
+        }
+
+        // 重新开始学习
+        function restartLearning() {
+            startLearning();
+        }
+
+        // 渲染当前单词
+        function renderCurrentWord() {
+            if (appState.currentWordIndex >= appState.sessionWords.length) {
+                showSection('dashboard');
+                updateDashboard();
+                return;
+            }
+
+            const word = appState.sessionWords[appState.currentWordIndex];
+            document.getElementById('currentWord').textContent = word.chinese;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('answerInput').focus();
+            
+            // 显示单词卡片，隐藏结果卡片
+            document.getElementById('wordCard').classList.remove('hidden');
+            document.getElementById('resultCard').classList.add('hidden');
+        }
+
+        // 更新学习进度
+        function updateLearnProgress() {
+            const progressText = `${appState.currentWordIndex + 1}/${appState.sessionWords.length}`;
+            document.getElementById('learnProgress').textContent = progressText;
+        }
+
+        // 检查答案
+        function checkAnswer() {
+            const input = document.getElementById('answerInput').value.trim();
+            const currentWord = appState.sessionWords[appState.currentWordIndex];
+            
+            if (!input) {
+                showModal('提示', '请输入答案', 'info');
+                return;
+            }
+
+            // 处理多种正确拼写
+            const correctAnswers = currentWord.english.split(',').map(ans => normalizeAnswer(ans));
+            const userAnswer = normalizeAnswer(input);
+            
+            // 检查是否正确
+            const isCorrect = correctAnswers.some(ans => ans === userAnswer);
+            
+            // 显示结果卡片，隐藏单词卡片
+            document.getElementById('wordCard').classList.add('hidden');
+            document.getElementById('resultCard').classList.remove('hidden');
+            
+            if (isCorrect) {
+                // 正确
+                document.getElementById('correctResult').classList.remove('hidden');
+                document.getElementById('wrongResult').classList.add('hidden');
+                document.getElementById('correctWord').textContent = currentWord.english;
+                
+                // 更新单词统计
+                currentWord.correct++;
+                
+                // 添加到已学单词
+                if (!appState.learnedWords.includes(currentWord.english)) {
+                    appState.learnedWords.push(currentWord.english);
+                }
+                
+                // 从错题中移除（如果存在）
+                const wrongIndex = appState.wrongWords.findIndex(w => w.english === currentWord.english);
+                if (wrongIndex !== -1) {
+                    appState.wrongWords.splice(wrongIndex, 1);
+                }
+                
+                // 更新今日学习数量
+                if (new Date().toDateString() === appState.today) {
+                    appState.todayLearned++;
+                } else {
+                    appState.today = new Date().toDateString();
+                    appState.todayLearned = 1;
+                }
+                
+                // 添加到历史记录
+                appState.history.unshift({
+                    english: currentWord.english,
+                    chinese: currentWord.chinese,
+                    result: '正确',
+                    date: new Date().toLocaleString()
+                });
+                
+            } else {
+                // 错误
+                document.getElementById('correctResult').classList.add('hidden');
+                document.getElementById('wrongResult').classList.remove('hidden');
+                document.getElementById('wrongWord').textContent = currentWord.english;
+                
+                // 分析错误原因
+                const errorReason = getErrorReason(userAnswer, correctAnswers[0]);
+                document.getElementById('errorReason').textContent = errorReason;
+                
+                // 更新单词统计
+                currentWord.wrong++;
+                
+                // 添加到错题
+                if (!appState.wrongWords.some(w => w.english === currentWord.english)) {
+                    appState.wrongWords.push({...currentWord});
+                }
+                
+                // 添加到历史记录
+                appState.history.unshift({
+                    english: currentWord.english,
+                    chinese: currentWord.chinese,
+                    result: '错误',
+                    date: new Date().toLocaleString()
+                });
+            }
+            
+            // 保存数据
+            saveToLocalStorage();
+        }
+
+        // 标准化答案（去除空格和点号）
+        function normalizeAnswer(answer) {
+            return answer.toLowerCase().replace(/[ .]/g, '');
+        }
+
+        // 获取错误原因
+        function getErrorReason(userAnswer, correctAnswer) {
+            if (userAnswer.length !== correctAnswer.length) {
+                return `长度不正确，应为${correctAnswer.length}个字符`;
+            }
+            
+            // 找出第一个不同的字符位置
+            for (let i = 0; i < Math.min(userAnswer.length, correctAnswer.length); i++) {
+                if (userAnswer[i] !== correctAnswer[i]) {
+                    return `第${i+1}个字符错误，应为"${correctAnswer[i]}"`;
+                }
+            }
+            
+            return "拼写不正确";
+        }
+
+        // 提交反馈
+        function submitFeedback() {
+            if (currentFeedbackWordIndex === -1) return;
+            
+            // 获取反馈原因
+            let reason = document.querySelector('input[name="feedbackReason"]:checked').value;
+            if (reason === '其他') {
+                reason += '：' + document.getElementById('otherReason').value;
+            }
+            
+            // 记录反馈（实际应用中可能会发送到服务器）
+            console.log(`反馈：单词索引${currentFeedbackWordIndex}，原因：${reason}`);
+            
+            // 更新结果为正确
+            if (isReviewMode) {
+                const word = appState.reviewWords[currentFeedbackWordIndex];
+                // 处理复习模式下的反馈
+                document.getElementById('reviewWrongResult').classList.add('hidden');
+                document.getElementById('reviewCorrectResult').classList.remove('hidden');
+                document.getElementById('reviewCorrectWord').textContent = word.english;
+                
+                // 从错题中移除
+                const wrongIndex = appState.wrongWords.findIndex(w => w.english === word.english);
+                if (wrongIndex !== -1) {
+                    appState.wrongWords.splice(wrongIndex, 1);
+                }
+                
+                // 更新历史记录
+                const historyIndex = appState.history.findIndex(h => h.english === word.english && h.result === '错误');
+                if (historyIndex !== -1) {
+                    appState.history[historyIndex].result = '正确';
+                }
+                
+                word.correct++;
+            } else {
+                const word = appState.sessionWords[currentFeedbackWordIndex];
+                // 处理学习模式下的反馈
+                document.getElementById('wrongResult').classList.add('hidden');
+                document.getElementById('correctResult').classList.remove('hidden');
+                document.getElementById('correctWord').textContent = word.english;
+                
+                // 从错题中移除
+                const wrongIndex = appState.wrongWords.findIndex(w => w.english === word.english);
+                if (wrongIndex !== -1) {
+                    appState.wrongWords.splice(wrongIndex, 1);
+                }
+                
+                // 更新历史记录
+                const historyIndex = appState.history.findIndex(h => h.english === word.english && h.result === '错误');
+                if (historyIndex !== -1) {
+                    appState.history[historyIndex].result = '正确';
+                }
+                
+                word.correct++;
+                word.wrong--;
+            }
+            
+            // 保存数据
+            saveToLocalStorage();
+            renderWrongWordsList();
+            
+            // 关闭反馈模态框
+            document.getElementById('feedbackModal').classList.add('hidden');
+            showModal('反馈成功', '感谢您的反馈，结果已更新', 'success');
+        }
+
+        // 下一个单词
+        function nextWord() {
+            appState.currentWordIndex++;
+            updateLearnProgress();
+            
+            if (appState.currentWordIndex < appState.sessionWords.length) {
+                renderCurrentWord();
+            } else {
+                // 学习完成
+                showSection('dashboard');
+                updateDashboard();
+                showModal('学习完成', '恭喜你完成了本次学习！', 'success');
+            }
+        }
+
+        // 初始化复习
+        function initReview() {
+            // 复制当前错题列表作为复习内容
+            appState.reviewWords = [...appState.wrongWords];
+            
+            if (appState.reviewWords.length === 0) {
+                // 没有错题，显示完成界面
+                document.getElementById('reviewContent').classList.add('hidden');
+                document.getElementById('reviewComplete').classList.remove('hidden');
+                document.getElementById('reviewCompleteMessage').textContent = '你目前没有需要复习的错题，继续保持！';
+                document.getElementById('reviewAgainSection').classList.add('hidden');
+                return;
+            }
+            
+            // 显示复习内容，隐藏完成界面
+            document.getElementById('reviewContent').classList.remove('hidden');
+            document.getElementById('reviewComplete').classList.add('hidden');
+            
+            // 打乱顺序
+            shuffleArray(appState.reviewWords);
+            
+            appState.currentReviewWordIndex = 0;
+            renderCurrentReviewWord();
+            updateReviewProgress();
+        }
+
+        // 渲染当前复习单词
+        function renderCurrentReviewWord() {
+            if (appState.currentReviewWordIndex >= appState.reviewWords.length) {
+                finishReviewSession();
+                return;
+            }
+
+            const word = appState.reviewWords[appState.currentReviewWordIndex];
+            document.getElementById('currentReviewWord').textContent = word.chinese;
+            document.getElementById('reviewAnswerInput').value = '';
+            document.getElementById('reviewAnswerInput').focus();
+            
+            // 显示单词卡片，隐藏结果卡片
+            document.getElementById('reviewCard').classList.remove('hidden');
+            document.getElementById('reviewResultCard').classList.add('hidden');
+        }
+
+        // 更新复习进度
+        function updateReviewProgress() {
+            const progressText = `${appState.currentReviewWordIndex + 1}/${appState.reviewWords.length}`;
+            document.getElementById('reviewProgress').textContent = progressText;
+        }
+
+        // 检查复习答案
+        function checkReviewAnswer() {
+            const input = document.getElementById('reviewAnswerInput').value.trim();
+            const currentWord = appState.reviewWords[appState.currentReviewWordIndex];
+            
+            if (!input) {
+                showModal('提示', '请输入答案', 'info');
+                return;
+            }
+
+            // 处理多种正确拼写
+            const correctAnswers = currentWord.english.split(',').map(ans => normalizeAnswer(ans));
+            const userAnswer = normalizeAnswer(input);
+            
+            // 检查是否正确
+            const isCorrect = correctAnswers.some(ans => ans === userAnswer);
+            
+            // 显示结果卡片，隐藏单词卡片
+            document.getElementById('reviewCard').classList.add('hidden');
+            document.getElementById('reviewResultCard').classList.remove('hidden');
+            
+            if (isCorrect) {
+                // 正确
+                document.getElementById('reviewCorrectResult').classList.remove('hidden');
+                document.getElementById('reviewWrongResult').classList.add('hidden');
+                document.getElementById('reviewCorrectWord').textContent = currentWord.english;
+                
+                // 更新单词统计
+                currentWord.correct++;
+                
+                // 从错题中移除
+                const wrongIndex = appState.wrongWords.findIndex(w => w.english === currentWord.english);
+                if (wrongIndex !== -1) {
+                    appState.wrongWords.splice(wrongIndex, 1);
+                }
+                
+                // 添加到历史记录
+                appState.history.unshift({
+                    english: currentWord.english,
+                    chinese: currentWord.chinese,
+                    result: '正确(复习)',
+                    date: new Date().toLocaleString()
+                });
+                
+            } else {
+                // 错误
+                document.getElementById('reviewCorrectResult').classList.add('hidden');
+                document.getElementById('reviewWrongResult').classList.remove('hidden');
+                document.getElementById('reviewWrongWord').textContent = currentWord.english;
+                
+                // 分析错误原因
+                const errorReason = getErrorReason(userAnswer, correctAnswers[0]);
+                document.getElementById('reviewErrorReason').textContent = errorReason;
+                
+                // 更新单词统计
+                currentWord.wrong++;
+                
+                // 添加到历史记录
+                appState.history.unshift({
+                    english: currentWord.english,
+                    chinese: currentWord.chinese,
+                    result: '错误(复习)',
+                    date: new Date().toLocaleString()
+                });
+            }
+            
+            // 保存数据
+            saveToLocalStorage();
+            renderWrongWordsList();
+        }
+
+        // 下一个复习单词
+        function nextReviewWord() {
+            appState.currentReviewWordIndex++;
+            updateReviewProgress();
+            renderCurrentReviewWord();
+        }
+
+        // 完成复习会话
+        function finishReviewSession() {
+            // 找出仍然错误的单词
+            const stillWrong = appState.reviewWords.filter(word => {
+                // 检查这个单词是否还在错题列表中
+                return appState.wrongWords.some(w => w.english === word.english);
+            });
+            
+            // 显示完成界面
+            document.getElementById('reviewContent').classList.add('hidden');
+            document.getElementById('reviewComplete').classList.remove('hidden');
+            
+            if (stillWrong.length > 0) {
+                // 还有错误单词
+                document.getElementById('reviewCompleteMessage').textContent = `你完成了本轮复习，仍有${stillWrong.length}个单词需要加强`;
+                document.getElementById('reviewAgainSection').classList.remove('hidden');
+                // 保存仍错误的单词，供再次复习
+                appState.reviewWords = stillWrong;
+            } else {
+                // 全部正确
+                document.getElementById('reviewCompleteMessage').textContent = '恭喜你！所有错题都已掌握';
+                document.getElementById('reviewAgainSection').classList.add('hidden');
+            }
+        }
+
+        // 继续复习
+        function reviewAgain() {
+            appState.currentReviewWordIndex = 0;
+            // 打乱顺序
+            shuffleArray(appState.reviewWords);
+            // 显示复习内容，隐藏完成界面
+            document.getElementById('reviewContent').classList.remove('hidden');
+            document.getElementById('reviewComplete').classList.add('hidden');
+            renderCurrentReviewWord();
+            updateReviewProgress();
+        }
+
+        // 结束复习
+        function finishReview() {
+            showSection('dashboard');
+            updateDashboard();
+        }
+
+        // 显示提示
+        function showHint() {
+            const currentWord = appState.sessionWords[appState.currentWordIndex];
+            const firstEnglish = currentWord.english.split(',')[0]; // 取第一个拼写
+            let hint = '';
+            
+            if (appState.settings.showFirstLetter) {
+                hint += `首字母: ${firstEnglish[0].toUpperCase()} `;
+            }
+            
+            if (appState.settings.showWordLength) {
+                hint += `长度: ${firstEnglish.length}个字母`;
+            }
+            
+            showModal('提示', hint, 'info');
+        }
+
+        // 显示复习提示
+        function showReviewHint() {
+            const currentWord = appState.reviewWords[appState.currentReviewWordIndex];
+            const firstEnglish = currentWord.english.split(',')[0]; // 取第一个拼写
+            let hint = '';
+            
+            if (appState.settings.showFirstLetter) {
+                hint += `首字母: ${firstEnglish[0].toUpperCase()} `;
+            }
+            
+            if (appState.settings.showWordLength) {
+                hint += `长度: ${firstEnglish.length}个字母`;
+            }
+            
+            showModal('提示', hint, 'info');
+        }
+
+        // 更新仪表盘
+        function updateDashboard() {
+            // 更新统计数据
+            const totalWords = appState.words.length;
+            const learnedCount = appState.learnedWords.length;
+            const learnedPercentage = totalWords > 0 ? (learnedCount / totalWords) * 100 : 0;
+            
+            let totalCorrect = 0;
+            let totalAttempts = 0;
+            appState.words.forEach(word => {
+                totalCorrect += word.correct;
+                totalAttempts += word.correct + word.wrong;
+            });
+            const correctRate = totalAttempts > 0 ? (totalCorrect / totalAttempts) * 100 : 0;
+            
+            const todayCount = appState.todayLearned;
+            const todayPercentage = appState.dailyGoal > 0 ? (todayCount / appState.dailyGoal) * 100 : 0;
+            
+            const wrongCount = appState.wrongWords.length;
+            const wrongPercentage = totalWords > 0 ? (wrongCount / totalWords) * 100 : 0;
+            
+            // 更新DOM
+            document.getElementById('learnedCount').textContent = learnedCount;
+            document.getElementById('learnedProgress').style.width = `${learnedPercentage}%`;
+            
+            document.getElementById('correctRate').textContent = `${Math.round(correctRate)}%`;
+            document.getElementById('correctProgress').style.width = `${correctRate}%`;
+            
+            document.getElementById('todayCount').textContent = todayCount;
+            document.getElementById('todayProgress').style.width = `${todayPercentage}%`;
+            
+            document.getElementById('wrongCount').textContent = wrongCount;
+            document.getElementById('wrongProgress').style.width = `${wrongPercentage}%`;
+            
+            // 更新历史记录表格
+            updateHistoryTable();
+            
+            // 更新图表
+            updateProgressChart();
+            updateMasteryChart();
+        }
+
+        // 更新历史记录表格
+        function updateHistoryTable() {
+            const historyTable = document.getElementById('historyTable');
+            
+            if (appState.history.length === 0) {
+                historyTable.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">暂无学习记录</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // 只显示最近20条记录
+            const recentHistory = appState.history.slice(0, 20);
+            
+            let html = '';
+            recentHistory.forEach(item => {
+                const resultClass = item.result.includes('正确') ? 'text-secondary' : 'text-danger';
+                html += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">${item.english}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${item.chinese}</td>
+                        <td class="px-6 py-4 whitespace-nowrap"><span class="${resultClass} font-medium">${item.result}</span></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.date}</td>
+                    </tr>
+                `;
+            });
+            
+            historyTable.innerHTML = html;
+        }
+
+        // 更新进度图表
+        function updateProgressChart() {
+            // 按日期统计学习数量
+            const dailyStats = {};
+            
+            // 获取过去7天的日期
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toLocaleDateString();
+                dailyStats[dateStr] = 0;
+            }
+            
+            // 统计每天的学习数量
+            appState.history.forEach(item => {
+                const date = new Date(item.date);
+                const dateStr = date.toLocaleDateString();
+                if (dailyStats.hasOwnProperty(dateStr)) {
+                    dailyStats[dateStr]++;
+                }
+            });
+            
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            
+            // 如果图表已存在，销毁它
+            if (window.progressChartInstance) {
+                window.progressChartInstance.destroy();
+            }
+            
+            // 创建新图表
+            window.progressChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(dailyStats),
+                    datasets: [{
+                        label: '学习数量',
+                        data: Object.values(dailyStats),
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新掌握情况图表
+        function updateMasteryChart() {
+            // 计算掌握程度
+            const masteryLevels = {
+                '未学习': 0,
+                '需复习': 0,
+                '已掌握': 0
+            };
+            
+            appState.words.forEach(word => {
+                if (!appState.learnedWords.includes(word.english)) {
+                    masteryLevels['未学习']++;
+                } else if (appState.wrongWords.some(w => w.english === word.english)) {
+                    masteryLevels['需复习']++;
+                } else {
+                    masteryLevels['已掌握']++;
+                }
+            });
+            
+            const ctx = document.getElementById('masteryChart').getContext('2d');
+            
+            // 如果图表已存在，销毁它
+            if (window.masteryChartInstance) {
+                window.masteryChartInstance.destroy();
+            }
+            
+            // 创建新图表
+            window.masteryChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(masteryLevels),
+                    datasets: [{
+                        data: Object.values(masteryLevels),
+                        backgroundColor: [
+                            'rgba(156, 163, 175, 0.7)', // 未学习 - 灰色
+                            'rgba(245, 158, 11, 0.7)',  // 需复习 - 橙色
+                            'rgba(16, 185, 129, 0.7)'   // 已掌握 - 绿色
+                        ],
+                        borderColor: [
+                            'rgba(156, 163, 175, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(16, 185, 129, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 导出历史记录
+        function exportHistory() {
+            if (appState.history.length === 0) {
+                showModal('提示', '暂无学习记录可导出', 'info');
+                return;
+            }
+            
+            // 准备导出数据
+            const exportData = appState.history.map(item => {
+                return {
+                    '单词': item.english,
+                    '中文': item.chinese,
+                    '结果': item.result,
+                    '日期': item.date
+                };
+            });
+            
+            // 创建工作簿和工作表
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '学习记录');
+            
+            // 导出文件
+            XLSX.writeFile(wb, `单词学习记录_${new Date().toLocaleDateString()}.xlsx`);
+        }
+
+        // 导出错题
+        function exportWrongWords() {
+            if (appState.wrongWords.length === 0) {
+                showModal('提示', '暂无错题可导出', 'info');
+                return;
+            }
+            
+            // 准备导出数据
+            const exportData = appState.wrongWords.map(item => {
+                return {
+                    '单词': item.english,
+                    '中文': item.chinese,
+                    '正确次数': item.correct,
+                    '错误次数': item.wrong
+                };
+            });
+            
+            // 创建工作簿和工作表
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '错题记录');
+            
+            // 导出文件
+            XLSX.writeFile(wb, `单词错题记录_${new Date().toLocaleDateString()}.xlsx`);
+        }
+
+        // 导出单词
+        function exportWords(format) {
+            if (appState.words.length === 0) {
+                showModal('提示', '暂无单词可导出', 'info');
+                return;
+            }
+            
+            if (format === 'txt') {
+                // 导出为TXT
+                let content = '';
+                appState.words.forEach(word => {
+                    content += `${word.english},${word.chinese}\n`;
+                });
+                
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `单词库_${new Date().toLocaleDateString()}.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } else {
+                // 导出为Excel
+                const exportData = appState.words.map(item => {
+                    return {
+                        '单词': item.english,
+                        '中文': item.chinese,
+                        '正确次数': item.correct,
+                        '错误次数': item.wrong
+                    };
+                });
+                
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '单词库');
+                XLSX.writeFile(wb, `单词库_${new Date().toLocaleDateString()}.xlsx`);
+            }
+        }
+
+        // 加载设置
+        function loadSettings() {
+            document.getElementById('showFirstLetter').checked = appState.settings.showFirstLetter;
+            document.getElementById('showWordLength').checked = appState.settings.showWordLength;
+        }
+
+        // 保存设置
+        function saveSettings() {
+            appState.settings.showFirstLetter = document.getElementById('showFirstLetter').checked;
+            appState.settings.showWordLength = document.getElementById('showWordLength').checked;
+            
+            saveToLocalStorage();
+            showModal('设置已保存', '您的设置已成功保存', 'success');
+        }
+
+        // 添加新单词
+        function addNewWord() {
+            const english = document.getElementById('newWord').value.trim();
+            const chinese = document.getElementById('newTranslation').value.trim();
+            
+            if (!english || !chinese) {
+                showModal('提示', '请输入单词和翻译', 'info');
+                return;
+            }
+            
+            // 检查是否已存在
+            const exists = appState.words.some(word => 
+                word.english.toLowerCase() === english.toLowerCase() && 
+                word.chinese === chinese
+            );
+            
+            if (exists) {
+                showModal('提示', '该单词已存在', 'info');
+                return;
+            }
+            
+            // 添加新单词
+            appState.words.push({
+                english: english,
+                chinese: chinese,
+                correct: 0,
+                wrong: 0
+            });
+            
+            // 保存并刷新表格
+            saveToLocalStorage();
+            renderWordsTable();
+            
+            // 清空输入框
+            document.getElementById('newWord').value = '';
+            document.getElementById('newTranslation').value = '';
+            
+            showModal('添加成功', '单词已成功添加到单词库', 'success');
+        }
+
+        // 编辑单词
+        function editWord(index) {
+            const word = appState.words[index];
+            document.getElementById('editWordIndex').value = index;
+            document.getElementById('editEnglish').value = word.english;
+            document.getElementById('editChinese').value = word.chinese;
+            document.getElementById('editWordModal').classList.remove('hidden');
+        }
+
+        // 保存编辑的单词
+        function saveEditedWord() {
+            const index = parseInt(document.getElementById('editWordIndex').value);
+            const english = document.getElementById('editEnglish').value.trim();
+            const chinese = document.getElementById('editChinese').value.trim();
+            
+            if (!english || !chinese) {
+                showModal('提示', '请输入单词和翻译', 'info');
+                return;
+            }
+            
+            // 更新单词
+            appState.words[index].english = english;
+            appState.words[index].chinese = chinese;
+            
+            // 保存并刷新表格
+            saveToLocalStorage();
+            renderWordsTable();
+            renderWrongWordsList();
+            
+            // 关闭模态框
+            document.getElementById('editWordModal').classList.add('hidden');
+            
+            showModal('修改成功', '单词已成功修改', 'success');
+        }
+
+        // 删除单词
+        function deleteWord(index) {
+            const word = appState.words[index];
+            
+            // 从已学单词中移除
+            const learnedIndex = appState.learnedWords.indexOf(word.english);
+            if (learnedIndex !== -1) {
+                appState.learnedWords.splice(learnedIndex, 1);
+            }
+            
+            // 从错题中移除
+            const wrongIndex = appState.wrongWords.findIndex(w => w.english === word.english);
+            if (wrongIndex !== -1) {
+                appState.wrongWords.splice(wrongIndex, 1);
+            }
+            
+            // 删除单词
+            appState.words.splice(index, 1);
+            
+            // 保存并刷新表格
+            saveToLocalStorage();
+            renderWordsTable();
+            renderWrongWordsList();
+            
+            showModal('删除成功', '单词已成功删除', 'success');
+        }
+
+        // 渲染单词表格
+        function renderWordsTable() {
+            const wordsTable = document.getElementById('wordsTable');
+            
+            if (appState.words.length === 0) {
+                wordsTable.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">暂无单词，请添加新单词</td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            appState.words.forEach((word, index) => {
+                html += `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">${word.english}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${word.chinese}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button onclick="editWord(${index})" class="text-primary hover:text-primary/80 mr-3">
+                                <i class="fa fa-pencil"></i> 修改
+                            </button>
+                            <button onclick="deleteWord(${index})" class="text-danger hover:text-danger/80">
+                                <i class="fa fa-trash"></i> 删除
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            wordsTable.innerHTML = html;
+        }
+
+        // 渲染错题列表
+        function renderWrongWordsList() {
+            const wrongWordsList = document.getElementById('wrongWordsList');
+            
+            if (appState.wrongWords.length === 0) {
+                wrongWordsList.innerHTML = `
+                    <div class="col-span-full text-center text-gray-500">暂无错题</div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            appState.wrongWords.forEach(word => {
+                html += `
+                    <div class="bg-red-50 p-3 rounded-lg border border-red-100 flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-gray-800">${word.english}</div>
+                            <div class="text-sm text-gray-600">${word.chinese}</div>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            错误: ${word.wrong}次
+                        </div>
+                    </div>
+                `;
+            });
+            
+            wrongWordsList.innerHTML = html;
+        }
+
+        // 导入单词
+        function importWords() {
+            const fileInput = document.getElementById('wordFile');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showModal('提示', '请选择要导入的文件', 'info');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    let newWords = [];
+                    const fileName = file.name.toLowerCase();
+                    
+                    if (fileName.endsWith('.xlsx') || fileName.endsWith('.xls')) {
+                        // 处理Excel文件
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                        
+                        jsonData.forEach(item => {
+                            // 尝试不同的列名可能性
+                            let english, chinese;
+                            
+                            if (item.单词 && item.中文) {
+                                english = item.单词.toString().trim();
+                                chinese = item.中文.toString().trim();
+                            } else if (item.English && item.Chinese) {
+                                english = item.English.toString().trim();
+                                chinese = item.Chinese.toString().trim();
+                            } else if (item[0] && item[1]) {
+                                english = item[0].toString().trim();
+                                chinese = item[1].toString().trim();
+                            } else {
+                                // 尝试获取第一个和第二个属性
+                                const keys = Object.keys(item);
+                                if (keys.length >= 2) {
+                                    english = item[keys[0]].toString().trim();
+                                    chinese = item[keys[1]].toString().trim();
+                                } else {
+                                    return; // 跳过格式不正确的行
+                                }
+                            }
+                            
+                            if (english && chinese) {
+                                newWords.push({ english, chinese });
+                            }
+                        });
+                    } else {
+                        // 处理TXT/CSV文件
+                        const content = e.target.result;
+                        const lines = content.split('\n');
+                        
+                        lines.forEach(line => {
+                            const trimmedLine = line.trim();
+                            if (trimmedLine) {
+                                const parts = trimmedLine.split(',');
+                                if (parts.length >= 2) {
+                                    const english = parts[0].trim();
+                                    const chinese = parts.slice(1).join(',').trim(); // 允许翻译中包含逗号
+                                    if (english && chinese) {
+                                        newWords.push({ english, chinese });
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    
+                    // 去重并添加到单词库
+                    let addedCount = 0;
+                    newWords.forEach(newWord => {
+                        const exists = appState.words.some(word => 
+                            word.english.toLowerCase() === newWord.english.toLowerCase() && 
+                            word.chinese === newWord.chinese
+                        );
+                        
+                        if (!exists) {
+                            appState.words.push({
+                                ...newWord,
+                                correct: 0,
+                                wrong: 0
+                            });
+                            addedCount++;
+                        }
+                    });
+                    
+                    // 保存并刷新表格
+                    saveToLocalStorage();
+                    renderWordsTable();
+                    
+                    // 重置文件输入
+                    fileInput.value = '';
+                    document.getElementById('fileName').textContent = '未选择文件';
+                    
+                    showModal('导入成功', `成功导入 ${addedCount} 个新单词，${newWords.length - addedCount} 个单词已存在`, 'success');
+                } catch (error) {
+                    console.error('导入错误:', error);
+                    showModal('导入失败', '文件格式不正确或内容有误', 'error');
+                }
+            };
+            
+            if (file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')) {
+                reader.readAsArrayBuffer(file);
+            } else {
+                reader.readAsText(file);
+            }
+        }
+
+        // 删除所有单词
+        function deleteAllWords() {
+            if (appState.words.length === 0) {
+                showModal('提示', '单词库已为空', 'info');
+                return;
+            }
+            
+            if (confirm('确定要删除所有单词吗？此操作不可恢复！')) {
+                appState.words = [];
+                appState.learnedWords = [];
+                appState.wrongWords = [];
+                
+                saveToLocalStorage();
+                renderWordsTable();
+                renderWrongWordsList();
+                updateDashboard();
+                
+                showModal('删除成功', '所有单词已删除', 'success');
+            }
+        }
+
+        // 重置学习进度
+        function resetProgress() {
+            if (confirm('确定要重置所有学习进度吗？单词库不会被删除')) {
+                appState.learnedWords = [];
+                appState.wrongWords = [];
+                appState.history = [];
+                appState.todayLearned = 0;
+                
+                // 重置每个单词的统计
+                appState.words.forEach(word => {
+                    word.correct = 0;
+                    word.wrong = 0;
+                });
+                
+                saveToLocalStorage();
+                renderWrongWordsList();
+                updateDashboard();
+                
+                showModal('重置成功', '学习进度已重置', 'success');
+            }
+        }
+
+        // 删除所有数据
+        function deleteAllData() {
+            if (confirm('确定要删除所有数据吗？包括单词库和学习记录，此操作不可恢复！')) {
+                appState.words = [];
+                appState.learnedWords = [];
+                appState.wrongWords = [];
+                appState.history = [];
+                appState.todayLearned = 0;
+                
+                saveToLocalStorage();
+                renderWordsTable();
+                renderWrongWordsList();
+                updateDashboard();
+                
+                showModal('删除成功', '所有数据已删除', 'success');
+            }
+        }
+
+        // 显示模态框
+        function showModal(title, message, type = 'info') {
+            modal.title.textContent = title;
+            modal.message.textContent = message;
+            
+            // 设置图标
+            modal.icon.className = '';
+            if (type === 'success') {
+                modal.icon.className = 'inline-block bg-secondary p-4 rounded-full mb-2';
+                modal.icon.innerHTML = '<i class="fa fa-check-circle text-3xl text-white"></i>';
+            } else if (type === 'error') {
+                modal.icon.className = 'inline-block bg-danger p-4 rounded-full mb-2';
+                modal.icon.innerHTML = '<i class="fa fa-times-circle text-3xl text-white"></i>';
+            } else {
+                modal.icon.className = 'inline-block bg-primary p-4 rounded-full mb-2';
+                modal.icon.innerHTML = '<i class="fa fa-info-circle text-3xl text-white"></i>';
+            }
+            
+            modal.element.classList.remove('hidden');
+        }
+
+        // 保存数据到本地存储
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('wordAppState', JSON.stringify(appState));
+                // 使用专门的函数保存开始时间（包含加密）
+                saveStartTime();
+                localStorage.setItem('membershipVerified', membershipVerified.toString());
+            } catch (error) {
+                console.error('保存数据失败:', error);
+                showModal('保存失败', '数据保存失败，请检查浏览器存储设置', 'error');
+            }
+        }
+
+        // 从本地存储加载数据
+        function loadFromLocalStorage() {
+            try {
+                const savedState = localStorage.getItem('wordAppState');
+                if (savedState) {
+                    const parsedState = JSON.parse(savedState);
+                    // 合并保存的状态（防止新增属性丢失）
+                    Object.assign(appState, parsedState);
+                }
+                
+                const savedStartTime = localStorage.getItem('appStartTime');
+                if (savedStartTime) {
+                    // 使用专门的时间初始化函数
+                    initAppStartTime();
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                showModal('加载失败', '数据加载失败，将使用默认设置', 'error');
+            }
+        }
+
+        // 打乱数组顺序
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // 暴露给全局，用于HTML中的onclick调用
+        window.editWord = editWord;
+        window.deleteWord = deleteWord;
+
+        // 初始化应用
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
 </html>
